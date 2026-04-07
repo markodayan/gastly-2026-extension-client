@@ -11,7 +11,7 @@ export type BlockData = {
   nonce: number;
   number: number;
   size: number;
-  timestamp: Date;
+  timestamp: string;
   uncles: string[];
   gasUtilizationRatio: number;
   txCount: number;
@@ -39,7 +39,7 @@ export type SpotData = {
 //   nonce: number;
 //   number: number;
 //   size: number;
-//   timestamp: Date;
+//   timestamp: string;
 //   uncles: string[];
 //   gasUtilizationRatio: number;
 //   txCount: number;
@@ -61,11 +61,11 @@ export type SpotData = {
 export type Preferences = {
   gasPreference: GasSpeed;
   fiatPreference: FiatPreference;
-  transactionPrefences: TransactionPreference;
+  transactionPreference: TransactionPreference;
 };
 
 export type ConnectionState = {
-  wsConnected: boolean;
+  wsConnected?: boolean;
   internetReachable: boolean;
   lastSpotFetchAt?: number;
   lastBlockAt?: number;

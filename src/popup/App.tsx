@@ -1,5 +1,13 @@
+import { Header } from './components/Header';
+
 function App() {
-  return <></>;
+  return (
+    <main>
+      <div className='w-[560px]'>
+        <Header />
+      </div>
+    </main>
+  );
 }
 
 export default App;
