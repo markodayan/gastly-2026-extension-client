@@ -1,15 +1,25 @@
-import { DEFAULT_STATE } from './defaults';
 import type { ExtensionState } from './types';
 
-const STATE_KEY = 'state';
+// const STATE_KEY = 'state';
+const DEFAULT_STATE: ExtensionState = {
+  preferences: {
+    gasPreference: 'fast',
+    fiatPreference: 'ethusd',
+    transactionPreference: 'eth-send',
+  },
+  connection: {
+    wsConnected: false,
+    internetReachable: true,
+  },
+};
 
 export async function getState(): Promise<ExtensionState> {
-  const result = await chrome.storage.local.get(STATE_KEY);
-  return (result[STATE_KEY] as ExtensionState) ?? DEFAULT_STATE;
+  const result = await chrome.storage.local.get('state');
+  return (result.state as ExtensionState) ?? DEFAULT_STATE;
 }
 
 export async function setState(state: ExtensionState): Promise<void> {
-  await chrome.storage.local.set({ [STATE_KEY]: state });
+  await chrome.storage.local.set({ state });
 }
 
 export async function patchState(partial: Partial<ExtensionState>): Promise<void> {

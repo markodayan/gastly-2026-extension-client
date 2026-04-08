@@ -6,9 +6,9 @@
     "default_popup": "index.html"
   },
   "background": {
-    "service_worker": "src/background/index.js",
+    "service_worker": "background.js",
     "type": "module"
   },
   "permissions": ["storage", "alarms"],
-  "host_permissions": ["http://localhost/*", "https://gastly-extension-api.tools/*"]
+  "host_permissions": ["http://localhost/*", "https://extension-api.gastly.tools/*"]
 }

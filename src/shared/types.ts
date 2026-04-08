@@ -1,18 +1,14 @@
-export type GasSpeed = 'fast' | 'average' | 'slow';
-export type FiatPreference = 'ethusd' | 'ethzar' | 'etheur' | 'ethaud';
-export type TransactionPreference = 'eth-send';
-
 /**
  * Legacy API block type
  */
 export type BlockData = {
   gasLimit: number;
   gasUsed: number;
-  nonce: number;
+  nonce?: number;
   number: number;
   size: number;
-  timestamp: string;
-  uncles: string[];
+  timestamp?: string;
+  uncles?: string[];
   gasUtilizationRatio: number;
   txCount: number;
   basefee: number;
@@ -57,6 +53,10 @@ export type SpotData = {
 // export type SpotData = {
 //   [ticker: string]: number;
 // }
+
+export type GasSpeed = 'fast' | 'average' | 'slow';
+export type FiatPreference = 'ethusd' | 'ethzar' | 'etheur' | 'ethaud';
+export type TransactionPreference = 'eth-send';
 
 export type Preferences = {
   gasPreference: GasSpeed;
