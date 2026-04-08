@@ -173,19 +173,10 @@ function scheduleReconnect() {
 }
 
 async function setBadgeFromBlock(block: BlockData) {
-  console.log('basefee to be badge', round(block.basefee));
+  console.log('basefee to be badge', block.basefee);
   await chrome.action.setBadgeText({
-    text: String(round(block.basefee)),
+    text: String(block.basefee),
   });
-}
-
-/**
- * Round a number to 2 significant figures (e.g. 12.3493 -> 12.35, 1.2745 -> 1.27)
- * @param num
- * @returns
- */
-function round(num: number): number {
-  return Math.round(num * 100) / 100;
 }
 
 function normaliseBlock(raw: BlockData) {
@@ -196,7 +187,7 @@ function normaliseBlock(raw: BlockData) {
     size: Number(raw.size),
     gasUtilizationRatio: Number(raw.gasUtilizationRatio),
     txCount: Number(raw.txCount),
-    basefee: round(Number(raw.basefee)),
+    basefee: Number(raw.basefee),
     priorityFees: {
       fast: Number(raw.priorityFees.fast),
       average: Number(raw.priorityFees.average),

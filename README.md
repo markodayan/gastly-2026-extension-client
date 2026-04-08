@@ -141,6 +141,11 @@ Now we can load the application into Chrome:
 - click <b>Load unpacked</b>
 - select <b>dist/</b>
 
+After this, you will be able to click the "Inspects views <b>service worker</b>" link that will open the chrome devtools for the application. And you are all set to go.
+Whenever you update the application, simply just run the build again (`npm run build:dev` or `npm run build:prod`) and click the refresh button on the extension card for the application (on the `chrome://extensions` page).
+
+> Future change is to improve the hot reload even more (see ChatGPT discussion to learn more about that)
+
 ---
 
 ### First Service Worker Functionality
