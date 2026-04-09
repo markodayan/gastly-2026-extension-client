@@ -6,10 +6,12 @@ import type {
   NormalisedBlock,
   SpotPricesMessage,
   NormalisedSpotPrices,
+  WsIncomingMessage,
 } from '../shared/types';
 
 let ws: WebSocket | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+let bootstrapPromise: Promise<void> | null = null;
 
 const SPOT_ALARM_NAME = 'fetchAndSyncSpotRates';
 const WS_RECONNECT_DELAY_MS = 3_000;
@@ -17,16 +19,21 @@ const WS_RECONNECT_DELAY_MS = 3_000;
 /**
  * Some Notes:
  * - I need all these functions using void when called to be explained as to why they use void
+ * - Maybe I need to also set an alarm to periodically check the ws connection (so that if there is an internet outage, that the wsConnected connection state variable is set to false)
+ * - one thing i noticed is that net::ERR_INTERNET_DISCONNECTED can be something maybe useful to update connection state.
+ * - the websocket client could fail for maybe two reasons (1. internet disconnected, 2. (maybe this is true) some unhealthy client-server ws connection). I need to ensure I cover both these cases
  */
 
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('[onInstalled] bootstrapping...');
-  void bootstrap();
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('[onInstalled] bootstrapping...', details.reason);
+  // void bootstrap();
+  void runBootstrapOnce();
 });
 
 chrome.runtime.onStartup.addListener(() => {
   console.log('[onStartup] bootstrapping...');
-  void bootstrap();
+  // void bootstrap();
+  void runBootstrapOnce();
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -34,6 +41,16 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     void fetchAndSyncSpotRates();
   }
 });
+
+function runBootstrapOnce(): Promise<void> {
+  if (bootstrapPromise) return bootstrapPromise;
+
+  bootstrapPromise = bootstrap().finally(() => {
+    bootstrapPromise = null;
+  });
+
+  return bootstrapPromise;
+}
 
 async function bootstrap(): Promise<void> {
   await ensureDefaults();
@@ -49,7 +66,6 @@ async function bootstrap(): Promise<void> {
 
   await chrome.alarms.create(SPOT_ALARM_NAME, { periodInMinutes: 1 });
 
-  // Fetch spotsonce on boot so the popup can get data quickly
   void fetchAndSyncSpotRates();
 
   connectBlockWs();
@@ -60,7 +76,14 @@ async function fetchAndSyncLatestBlock(): Promise<void> {
     const res = await fetch(`${API_HTTP_BASE}/block`);
 
     if (!res.ok) {
-      throw new Error(`HTTP /block ${res.status}`);
+      // backend reachable but returned error
+      console.error('HTTP /block Backend returned error', res.status);
+      await setConnection({
+        backendReachable: true,
+      });
+
+      return;
+      // throw new Error(`HTTP /block ${res.status}`);
     }
 
     const raw: BlockMessage = await res.json();
@@ -69,18 +92,15 @@ async function fetchAndSyncLatestBlock(): Promise<void> {
 
     await setBlock(block);
     await setConnection({
-      wsConnected: false, // am I sure about this? maybe I should remove this?
-      internetReachable: true,
+      backendReachable: true,
       lastBlockAt: Date.now(),
     });
     await setBadgeFromBlock(block);
   } catch (error) {
     console.error('Failed to complete fetch and sync of latest block', error);
 
-    // What if not a network-related error? (maybe need to investigate this state change)
     await setConnection({
-      wsConnected: false, // why am I setting wsConnected here? Its not related to anything
-      internetReachable: false, // maybe this should rather be apiReachable? or api_http_reachable or something like that. Connection state can be improved - im obviously wanting to check internet is accessible, then after that its about checking if am connected to websocket server of backend as well as checking whether my designated http routes are successful whenever they fire (need to think about these things). But maybe everything is good as it is.
+      backendReachable: false,
     });
   }
 }
@@ -90,7 +110,14 @@ async function fetchAndSyncSpotRates(): Promise<void> {
     const res = await fetch(`${API_HTTP_BASE}/spot`);
 
     if (!res.ok) {
-      throw new Error(`HTTP /spot ${res.status}`);
+      // backend reachable but returned error
+      console.error('HTTP /spot Backend returned error', res.status);
+      await setConnection({
+        backendReachable: true,
+      });
+
+      return;
+      // throw new Error(`HTTP /spot ${res.status}`);
     }
 
     const raw: SpotPricesMessage = await res.json();
@@ -99,11 +126,13 @@ async function fetchAndSyncSpotRates(): Promise<void> {
 
     await setSpots(spots);
     await setConnection({
-      internetReachable: true,
+      backendReachable: true,
       lastSpotFetchAt: Date.now(),
     });
 
-    // does this really belong here? Maybe I should set another alarm for it instead
+    // using the periodic spot fetch as a recovery signal
+    // tells me if HTTP works again, maybe the network is back, maybe the backend is back
+    // and so can try restore websocket
     if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
       connectBlockWs();
     }
@@ -111,7 +140,7 @@ async function fetchAndSyncSpotRates(): Promise<void> {
     console.error('Failed to complete fetch and sync of spot rates', error);
 
     await setConnection({
-      internetReachable: false, // again, need to be sure it is because of network failure
+      backendReachable: false,
     });
   }
 }
@@ -145,21 +174,21 @@ async function handleWsOpen(): Promise<void> {
 
   await setConnection({
     wsConnected: true,
-    internetReachable: true,
+    backendReachable: true,
   });
 }
 
 async function handleWsMessage(event: MessageEvent<string>): Promise<void> {
-  const parsed = JSON.parse(event.data) as BlockMessage & { type?: string }; // what does this type expression mean with & operation?
-
+  // treat parsed as a value that has all the fields of BlockMessage and may also have an optional type field
+  const parsed = JSON.parse(event.data) as WsIncomingMessage;
   // [Dealing with legacy API, won't be needed once i remove this from server in future] - ignore non-block payloads if server emits control messages
-  if (parsed.type) return;
+  if ('type' in parsed) return;
 
   const nextBlock = normaliseBlock(parsed);
   console.log('ws /block (post-normalised)', nextBlock);
   const currentBlock = await getBlock();
 
-  // is this even necessary? It assumes my entire server-side block pipeline is not event-driven by new block heads, so I don't even now if this is worth checking nor the above step of fetching the currentBlock from storage.
+  // Will leave this sanity check in for now, even if its not req89red (see development notes)
   if (currentBlock?.number === nextBlock.number) {
     return;
   }
@@ -168,7 +197,7 @@ async function handleWsMessage(event: MessageEvent<string>): Promise<void> {
   await setBadgeFromBlock(nextBlock);
   await setConnection({
     wsConnected: true,
-    internetReachable: true,
+    backendReachable: true,
     lastBlockAt: Date.now(),
   });
 }

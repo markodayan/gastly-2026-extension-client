@@ -14,7 +14,7 @@ const DEFAULT_PREFERENCES: Preferences = {
 
 const DEFAULT_CONNECTION: ConnectionState = {
   wsConnected: false,
-  internetReachable: true,
+  backendReachable: true,
 };
 
 /**

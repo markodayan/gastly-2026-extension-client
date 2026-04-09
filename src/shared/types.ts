@@ -19,6 +19,13 @@ export type BlockMessage = {
   };
 };
 
+// will remove once legacy api is deprecated
+type WSControlMessage = {
+  type: string;
+};
+
+export type WsIncomingMessage = BlockMessage | WSControlMessage;
+
 /**
  * Legacy API spot data type (will parse price to number)
  */
@@ -64,7 +71,7 @@ export type Preferences = {
 
 export type ConnectionState = {
   wsConnected: boolean;
-  internetReachable: boolean;
+  backendReachable: boolean;
   lastSpotFetchAt?: number;
   lastBlockAt?: number;
 };
