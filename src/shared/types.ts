@@ -27,35 +27,7 @@ export type SpotPricesMessage = {
 };
 
 /**
- * Updated API block type
- */
-// export type BlockData = {
-//   gasLimit: number;
-//   gasUsed: number;
-//   nonce: number;
-//   number: number;
-//   size: number;
-//   timestamp: string;
-//   uncles: string[];
-//   gasUtilizationRatio: number;
-//   txCount: number;
-//   basefee: number;
-//   priorityFees: {
-//     fast: number;
-//     average: number;
-//     slow: number;
-//   };
-// };
-
-/**
- * Updated API spot data type
- */
-// export type SpotData = {
-//   [ticker: string]: number;
-// }
-
-/**
- * Data that will be written to storage under key 'spot' that will be fetched by popup
+ * Data that will be written to storage under key 'spots' that will be fetched by popup
  */
 export type NormalisedSpotPrices = {
   [ticker: string]: number;
@@ -77,6 +49,7 @@ export type NormalisedBlock = {
     average: number;
     slow: number;
   };
+  updatedAt?: number;
 };
 
 export type GasSpeed = 'fast' | 'average' | 'slow';
@@ -90,7 +63,7 @@ export type Preferences = {
 };
 
 export type ConnectionState = {
-  wsConnected?: boolean;
+  wsConnected: boolean;
   internetReachable: boolean;
   lastSpotFetchAt?: number;
   lastBlockAt?: number;

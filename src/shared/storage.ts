@@ -1,59 +1,129 @@
-import type { ExtensionState } from './types';
+import type {
+  NormalisedBlock,
+  NormalisedSpotPrices,
+  ConnectionState,
+  Preferences,
+  ExtensionState,
+} from './types';
 
-// const STATE_KEY = 'state';
-const DEFAULT_STATE: ExtensionState = {
-  preferences: {
-    gasPreference: 'fast',
-    fiatPreference: 'ethusd',
-    transactionPreference: 'eth-send',
-  },
-  connection: {
-    wsConnected: false,
-    internetReachable: true,
-  },
+const DEFAULT_PREFERENCES: Preferences = {
+  gasPreference: 'fast',
+  fiatPreference: 'ethusd',
+  transactionPreference: 'eth-send',
 };
 
-export async function getState(): Promise<ExtensionState> {
-  const result = await chrome.storage.local.get('state');
-  return (result.state as ExtensionState) ?? DEFAULT_STATE;
-}
+const DEFAULT_CONNECTION: ConnectionState = {
+  wsConnected: false,
+  internetReachable: true,
+};
 
-export async function setState(state: ExtensionState): Promise<void> {
-  await chrome.storage.local.set({ state });
-}
-
-export async function patchState(partial: Partial<ExtensionState>): Promise<void> {
-  const current = await getState();
-
-  const next: ExtensionState = {
-    ...current,
-    ...partial,
-    preferences: {
-      ...current.preferences,
-      ...partial.preferences,
-    },
-    connection: {
-      ...current.connection,
-      ...partial.connection,
-    },
-  };
-
-  await setState(next);
-}
+/**
+ * Describes the raw object return by chrome.storage.local.get(...). This value differs from the value under an individual key.
+ */
+type StorageShape = {
+  block?: NormalisedBlock;
+  spots?: NormalisedSpotPrices;
+  preferences?: Partial<Preferences>;
+  connection?: Partial<ConnectionState>;
+};
 
 export async function ensureDefaults(): Promise<void> {
-  const current = await getState();
+  const result = (await chrome.storage.local.get(['preferences', 'connection'])) as StorageShape;
 
-  await setState({
-    ...DEFAULT_STATE,
-    ...current,
+  await chrome.storage.local.set({
     preferences: {
-      ...DEFAULT_STATE.preferences,
-      ...current.preferences,
+      ...DEFAULT_PREFERENCES,
+      ...(result.preferences ?? {}),
     },
     connection: {
-      ...DEFAULT_STATE.connection,
-      ...current.connection,
+      ...DEFAULT_CONNECTION,
+      ...(result.connection ?? {}),
+    },
+  });
+}
+
+export async function getStorageSnapshot(): Promise<ExtensionState> {
+  const result = (await chrome.storage.local.get([
+    'block',
+    'spots',
+    'preferences',
+    'connection',
+  ])) as StorageShape;
+
+  return {
+    block: result.block,
+    spots: result.spots,
+    preferences: {
+      ...DEFAULT_PREFERENCES,
+      ...(result.preferences ?? {}),
+    },
+    connection: {
+      ...DEFAULT_CONNECTION,
+      ...(result.connection ?? {}),
+    },
+  };
+}
+
+// will be used by the service worker
+// will be used by the popup
+export async function getBlock(): Promise<NormalisedBlock | undefined> {
+  const result = (await chrome.storage.local.get('block')) as StorageShape;
+  return result.block;
+}
+
+// will be used by the service worker
+export async function setBlock(block: NormalisedBlock): Promise<void> {
+  await chrome.storage.local.set({ block });
+}
+
+// will be used by the popup
+export async function getSpots(): Promise<NormalisedSpotPrices | undefined> {
+  const result = (await chrome.storage.local.get('spots')) as StorageShape;
+  return result.spots;
+}
+
+// will be used by the service worker
+export async function setSpots(spots: NormalisedSpotPrices): Promise<void> {
+  await chrome.storage.local.set({ spots });
+}
+
+// Will be used by the popup
+export async function getPreferences(): Promise<Preferences> {
+  const result = (await chrome.storage.local.get('preferences')) as StorageShape;
+  return {
+    ...DEFAULT_PREFERENCES,
+    ...(result.preferences ?? {}),
+  };
+}
+
+// Will be used by the popup.
+export async function setPreferences(preferences: Partial<Preferences>): Promise<void> {
+  const current = await getPreferences();
+
+  await chrome.storage.local.set({
+    preferences: {
+      ...current,
+      ...preferences,
+    },
+  });
+}
+
+export async function getConnection(): Promise<ConnectionState> {
+  const result = (await chrome.storage.local.get('connection')) as StorageShape;
+
+  return {
+    ...DEFAULT_CONNECTION,
+    ...(result.connection ?? {}),
+  };
+}
+
+export async function setConnection(connection: Partial<ConnectionState>): Promise<void> {
+  const current = await getConnection();
+
+  await chrome.storage.local.set({
+    connection: {
+      ...current,
+      ...connection,
     },
   });
 }
