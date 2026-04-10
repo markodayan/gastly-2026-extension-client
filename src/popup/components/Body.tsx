@@ -50,21 +50,24 @@ function Metric(children: MetricProps) {
 function CardsSection() {
   return (
     <div className='flex justify-evenly border-r-0 py-[10px] px-[15px]'>
-      <PriceCard active={true} />
-      <PriceCard active={false} extraClasses='mx-[10px]' />
-      <PriceCard active={false} />
+      <PriceCard label='Fast' active={true} />
+      <PriceCard label='Average' active={false} extraClasses='mx-[10px]' />
+      <PriceCard label='Slow' active={false} />
     </div>
   );
 }
 
 type PriceCardProps = {
   active: boolean;
+  label: string;
   extraClasses?: string;
 };
 
-function PriceCard({ active, extraClasses }: PriceCardProps) {
+function PriceCard({ active, label, extraClasses }: PriceCardProps) {
+  const id = label.toLowerCase(); // just in case need it later
   return (
     <div
+      id={id}
       className={`flex flex-col w-[33%] h-[175px] bg-darker-shade rounded-[15px] border-4 border-solid border-card-border cursor-pointer ${active ? 'border-active' : 'border-inactive'} ${extraClasses && extraClasses}`}
     >
       {/* Head  */}
@@ -72,7 +75,7 @@ function PriceCard({ active, extraClasses }: PriceCardProps) {
         <h3
           className={`font-normal text-[23px] tracking-[1.5px] pt-[4px] text-center ${active ? 'text-active' : 'text-white'}`}
         >
-          Fast
+          {label}
         </h3>
       </div>
       {/* Gas Price  */}

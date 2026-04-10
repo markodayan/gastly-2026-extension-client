@@ -18,10 +18,6 @@ const WS_RECONNECT_DELAY_MS = 3_000;
 
 /**
  * Some Notes:
- * - I need all these functions using void when called to be explained as to why they use void
- * - Maybe I need to also set an alarm to periodically check the ws connection (so that if there is an internet outage, that the wsConnected connection state variable is set to false)
- * - one thing i noticed is that net::ERR_INTERNET_DISCONNECTED can be something maybe useful to update connection state.
- * - the websocket client could fail for maybe two reasons (1. internet disconnected, 2. (maybe this is true) some unhealthy client-server ws connection). I need to ensure I cover both these cases
  */
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -67,7 +63,6 @@ async function bootstrap(): Promise<void> {
   await chrome.alarms.create(SPOT_ALARM_NAME, { periodInMinutes: 1 });
 
   void fetchAndSyncSpotRates();
-
   connectBlockWs();
 }
 
