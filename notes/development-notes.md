@@ -361,6 +361,7 @@ Before `useEffectEvent`, developers used the <b>"Latest Ref Pattern"</b> to achi
 |              |
 
 > Use `useEffectEvent` if you are on React 19.2+ and need to read current values inside an effect without re-triggering it.
+
 > Use `useRef` only if you need to directly interact with DOM elements or maintain a stable reference across renders for non-effect logic.
 
 # Future Improvement Directions
