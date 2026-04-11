@@ -10,6 +10,28 @@ The React app should:
 
 > React popup = view layer over storage
 
+# Development Workflow
+
+### React Devtools Usage
+
+First check if you have `react-devtools` installed globally, if not, run:
+
+```bash
+npm i -g react-devtools
+```
+
+Add this to your html file (or at the beggining of your entry point file)
+
+```html
+<script src="http://localhost:8097"></script>
+```
+
+Update the <b>Content Security Policy (CSP)</b>: If you are using Manivest V3, you must allow the connection in your `manifest.json`:
+
+```json
+"content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'; connect-src ws://localhost:8097" }
+```
+
 # Repair Strategies
 
 Preference management involves a <b>clean bidirectional resilience model</b> without making React and storage fight each other.
@@ -49,7 +71,7 @@ We want to compare this to the expected preferences shape and take action:
 
 ## <u>Dealing with <b>Cold-Open Repair</b></u>:
 
-- use `ensurePreferencePersisted()`
+- use `ensurePreferencesPersisted()`
 
 ## <u>Dealing with <b>Live-Session Repair</b></u>:
 
@@ -121,7 +143,7 @@ When it loads state:
 This function is defined in `/src/shared/storage.ts`. It will look for `preferences` in storage and do a healing merge with preference defaults if any (or more) preference options are missing. If preferences is completely missing or any of the preference items are missing -> we do a storage write with the computed merged object:
 
 ```typescript
-export async function ensurePreferencePersisted(): Promise<Preferences> {
+export async function ensurePreferencesPersisted(): Promise<Preferences> {
   const result = (await chrome.storage.local.get('preferences')) as StorageShape;
 
   const repaired: Preferences = {
@@ -145,7 +167,7 @@ export async function ensurePreferencePersisted(): Promise<Preferences> {
 }
 ```
 
-We can use `ensurePreferencePersisted()` in a popup hook. Calling it will restore preferences. We will combine this with the storage snapshot achieved via `getStorageSnapshot()`, to update the React application state with `{...snapshot, preferences}`.
+We can use `ensurePreferencesPersisted()` in a popup hook. Calling it will restore preferences. We will combine this with the storage snapshot achieved via `getStorageSnapshot()`, to update the React application state with `{...snapshot, preferences}`.
 
 # Some Q/A
 

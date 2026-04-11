@@ -1,9 +1,19 @@
 # Expected Service Worker Behaviour
 
-- If local storage is cleared during operation, all the state (`block`, `spot`, `connection`, `preferences`) should be able to recover. Everything except `preferences` naturally recovers due to the lifecycle design - this means <u>I need to ensure only that preferences can be stored (even if its just the default)</u>
-  - If the cache is cleared, the popup will already have some React state records of the user's preferences, we should use this to initiate a storage write. To manage this, we should maybe <b>check if the `preferences` key exists in storage</b>. If it doesn't then we simply make the popup
+- If local storage is cleared during operation, all the state (`block`, `spot`, `connection`, `preferences`) should be able to recover. Everything except `preferences` naturally recovers due to the lifecycle design - this means <u>I need to ensure only that preferences are always available (whether default, user-specified or merged with defaults if user-specified keys are missing)
+  - Make popup reads always merge defaults
+  - optionally persist repaired preferences immediately if missing
 
-### In Development (loading unpacked):
+## User updating preference in popup
+
+1. User changes a preference
+2. React state updates immediately
+3. Storage write happens
+4. Storage listener fires
+5. State stays in sync
+
+## In Development (loading unpacked):
 
 - Reload on extensions page will cause `onInstall` to run alone on start.
 - Opening browser (if already installed extension) will cause `onStartup` to run alone on start.
+  s

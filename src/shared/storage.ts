@@ -42,44 +42,6 @@ export async function ensureDefaults(): Promise<void> {
   });
 }
 
-// Method is called when popup is open and is used for managing full or partial flushing of preferences from storage that occurred while popup was closed. (Cold-open repair) The desired outcome is that we either sync default preferences (if preferences was entirely flushed) or partially sync preferences (if only some preference keys were flushed). This method will return a snapshot that is either the original or repaired object of the preferences.
-// For dealing with full or partial flushing of preferences from storage that occurred while the popup was open, that will require not using this function and instead comparing default preferences against the popup React preference state
-/**
- * read preferences
- * merge with defaults
- * persist if missing/partial
- * return repaired snapshot
- */
-
-/**
- * For dealing with cold-open repair
- * Either:
- *  - writes to 'preferences' => DEFAULT.PREFERENCES (if 'preferences' was entirely flushed)
- *  - writes to 'preferences' => {...DEFAULT.PREFERENCES, ...(result.preferences ?? {}) } (if 'preferences' was partially flushed)
- */
-export async function ensurePreferencesPersisted(): Promise<Preferences> {
-  const result = (await chrome.storage.local.get('preferences')) as StorageShape;
-
-  const repaired: Preferences = {
-    ...DEFAULT_PREFERENCES,
-    ...(result.preferences ?? {}),
-  };
-
-  const needsRepair =
-    !result.preferences ||
-    result.preferences.gasPreference === undefined ||
-    result.preferences.fiatPreference === undefined ||
-    result.preferences.transactionPreference === undefined;
-
-  if (needsRepair) {
-    await chrome.storage.local.set({
-      preferences: repaired,
-    });
-  }
-
-  return repaired;
-}
-
 // Pure reading of state
 export async function getStorageSnapshot(): Promise<ExtensionState> {
   const result = (await chrome.storage.local.get([
@@ -112,18 +74,18 @@ export async function managePreferences(
 ): Promise<Preferences> {
   const storage = (await chrome.storage.local.get('preferences')) as StorageShape;
 
-  // If preferences in storage exists, just return them (means the system is working normally)
   if (!preferencesNeedRepair(storage.preferences)) {
+    // if preferences exist and all keys are present we just return them and exit this function
     return storage.preferences as Preferences;
   }
 
-  // Compute repaired preferences
-  //  - Cold-Start -> Merge between storage-available preference data and defaults
-  //  - Live-Session -> Merge between react-stored preferences, storage preferences and defaults (in that order)
+  /* PATH: full preferences (either missing entirely or a field is missing) were not found in storage (for some unknown reason) - initiating repair protocol (either merging, or serving defaults)  */
+  //  - Cold-Start repair protocol -> Merge between storage-available preference data and defaults
+  //  - Live-Session repair protocol -> Merge between react-stored preferences, storage preferences and defaults (in that order)
   const repaired: Preferences = {
     ...DEFAULT_PREFERENCES,
     ...(storage.preferences ?? {}),
-    ...(reactPreferences ?? {}),
+    ...(reactPreferences ?? {}), // in normal conditions, storage.preferences and reactPreferences should be the same
   };
 
   // Write repaired preferences to storage (syncing app preferences and storage preference record)

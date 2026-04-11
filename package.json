@@ -9,7 +9,8 @@
     "build:dev": "tsc -b && vite build --mode development",
     "build:prod": "tsc -b && vite build --mode production",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "react-devtools": "react-devtools"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",

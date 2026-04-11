@@ -1,125 +1,83 @@
-// import { useState, useEffect, useRef } from 'react';
-// import type { ExtensionState, Preferences } from '../../shared/types';
-// import {
-//   getStorageSnapshot,
-//   ensurePreferencesPersisted,
-//   managePreferences,
-//   DEFAULT_PREFERENCES,
-// } from '../../shared/storage';
+/*global chrome*/
+import { useState, useEffect, useEffectEvent } from 'react';
+import type { ExtensionState, Preferences } from '../../shared/types';
+import { DEFAULT_PREFERENCES, getStorageSnapshot, managePreferences } from '../../shared/storage';
 
-// /**
-//  * On initial load (for handling cold-open repair of preferences):
-//  *  - call ensurePreferencesPersisted()
-//  *  - call getStorageSnapshot()
-//  *  - initialise React state from the repaired snapshot
-//  *
-//  * During normal storage changes
-//  *  - read fresh snapshot
-//  *  - sync React state
-//  *
-//  * During destructive preference change events (live-session repair protocol for preferences)
-//  *  - check if changes.preferences indicates for missing preferences object or partial preferences object
-//  *    - repair using current React preferences first
-//  *    - fill any remaining missing keys from default
-//  *    - persist repaired preferences
-//  *    - then sync snapshot to React
-//  */
+export function useExtensionState() {
+  const [state, setState] = useState<ExtensionState | null>(null);
 
-// function useExtensionState() {
-//   const [state, setState] = useState<ExtensionState | null>(null);
+  const handleStorageChange = useEffectEvent(
+    async (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
+      if (areaName !== 'local') return;
 
-//   useEffect(() => {
-//     let mounted = true;
+      console.log(`handleStorageChange ${new Date().toUTCString()}`, changes);
 
-//     async function load() {
-//       const [snapshot, preferences] = await Promise.all([
-//         getStorageSnapshot(),
-//         ensurePreferencesPersisted(),
-//       ]);
+      let preferences: Preferences | undefined;
 
-//       if (!mounted) return;
+      // If storage has a 'preference' change
+      if ('preferences' in changes) {
+        // Check if preferences are in sync (storage, popup state). If not apply repairs. Write preferences to state (even if redundant). Return latest merged preferences.
+        preferences = await managePreferences(state?.preferences);
+      }
 
-//       setState({
-//         ...snapshot,
-//         preferences,
-//       });
-//     }
+      const snapshot = await getStorageSnapshot();
 
-//     void load();
+      setState(preferences ? { ...snapshot, preferences } : snapshot);
+    },
+  );
 
-//     const listener = async (
-//       changes: Record<string, chrome.storage.StorageChange>,
-//       areaName: string,
-//     ) => {
-//       if (areaName !== 'local') return;
+  const updatePreferences = useEffectEvent(async (patch: Partial<Preferences>) => {
+    const currentPreferences = state?.preferences ?? DEFAULT_PREFERENCES;
 
-//       // If preferences were removed or touched -> repair
-//       if ('preferences' in changes) {
-//         await ensurePreferencesPersisted();
-//       }
+    const nextPreferences: Preferences = {
+      ...currentPreferences,
+      ...patch,
+    };
 
-//       const snapshot = await getStorageSnapshot();
+    // Optimistic React state update for instant UI response
+    setState((prev) => {
+      if (!prev) return prev; //stale data but better than unexpected data
+      return { ...prev, preferences: nextPreferences };
+    });
 
-//       if (!mounted) return;
-//       setState(snapshot);
-//     };
+    await chrome.storage.local.set({
+      preferences: nextPreferences,
+    });
+  });
 
-//     chrome.storage.onChanged.addListener(listener);
+  const setPreference = useEffectEvent(async (key: string, value: string) => {
+    await updatePreferences({ [key]: value } as Partial<Preferences>);
+  });
 
-//     return () => {
-//       mounted = false;
-//       chrome.storage.onChanged.removeListener(listener);
-//     };
-//   }, []);
-// }
+  useEffect(() => {
+    let mounted = true;
 
-// function useExtensionStateV2() {
-//   const [state, setState] = useState<ExtensionState | null>(null);
+    async function load() {
+      const preferences = await managePreferences(undefined); // on popup open, this should fetch preferences from storage, if they don't exist then the default
+      const snapshot = await getStorageSnapshot();
 
-//   useEffect(() => {
-//     let mounted = true;
+      if (!mounted) return;
 
-//     async function load() {
-//       const [preferences, snapshot] = await Promise.all([
-//         managePreferences(state?.preferences),
-//         getStorageSnapshot(),
-//       ]);
+      setState({
+        ...snapshot,
+        preferences,
+      });
+    }
 
-//       if (!mounted) return;
+    void load();
 
-//       setState({
-//         ...snapshot,
-//         preferences,
-//       });
-//     }
+    const listener = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
+      if (!mounted) return;
+      void handleStorageChange(changes, areaName);
+    };
 
-//     void load();
+    chrome.storage.onChanged.addListener(listener);
 
-//     const listener = async (
-//       changes: Record<string, chrome.storage.StorageChange>,
-//       areaName: string,
-//     ) => {
-//       let preferences;
-//       if (areaName !== 'local') return;
+    return () => {
+      mounted = false;
+      chrome.storage.onChanged.removeListener(listener);
+    };
+  }, []); // this lint error is not relevant for a things wrapped in an effect
 
-//       // If preferences were removed or touched -> repair
-//       if ('preferences' in changes) {
-//         preferences = (await managePreferences(state?.preferences)) as Preferences;
-//       }
-
-//       const snapshot = await getStorageSnapshot();
-
-//       const payload = preferences ? { ...snapshot, preferences } : snapshot;
-
-//       if (!mounted) return;
-//       setState(payload);
-//     };
-
-//     chrome.storage.onChanged.addListener(listener);
-
-//     return () => {
-//       mounted = false;
-//       chrome.storage.onChanged.removeListener(listener);
-//     };
-//   }, []);
-// }
+  return { state, updatePreferences, setPreference };
+}

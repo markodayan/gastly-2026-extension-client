@@ -1,3 +1,19 @@
+// const SYMBOL_MAP = {
+//   ethusd: '$',
+//   ethzar: 'R',
+//   ethaud: '$',
+//   etheur: '€',
+// };
+
+const TX_OPTION: Array<{ label: string; id: string; value: Preferecnes['transactionPrefences'] }> =
+  [
+    {
+      label: 'Send ETH',
+      id: 'eth-send',
+      value: 21000,
+    },
+  ];
+
 export function Body() {
   return (
     <div className='bg-card'>
@@ -8,15 +24,21 @@ export function Body() {
 }
 
 function BlockSection() {
+  /*
+    - we need to compute gasPrice -> basefee + priorityfee
+    - We need to compute fiatFee -> gasPrice * txPreference.value (this should also be prefixed by the correct currency symbol)
+  */
+
   return (
     <div className='flex flex-wrap items-center justify-between border-r-0 py-[10px] px-[15px] pb-[5px]'>
       <Metric label='Block Number' value={23830321} decimals={0} />
       <Metric label='ETH/BTC' customClass='fill' value={0.0306} decimals={4} />
       <Metric label='TX Count' value={342} decimals={0} />
-      <Metric label='Base Fee' value={0.1} decimals={2} suffix=' Gwei' />
+      <Metric label='Base Fee' value={0.1} decimals={2} suffix=' Gwei' /> // suffix of 'Gwei'
       <Metric label='Gas Used' value={40653812} decimals={0} />
-      <Metric label='Capacity' value={67} decimals={0} suffix='%' />
-      <Metric label='Block Size' value={218} decimals={0} suffix=' kB' />
+      <Metric label='Capacity' value={67} decimals={0} suffix='%' /> requires gasUsed/gasLimit
+      rounded to 0 significant figures & requires '%'suffix
+      <Metric label='Block Size' value={218} decimals={0} suffix=' kB' /> // requires 'kB' suffix
     </div>
   );
 }

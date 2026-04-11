@@ -1,36 +1,129 @@
-export function Header() {
+import { memo, useMemo, useEffect, useRef } from 'react';
+import type { NormalisedSpotPrices, Preferences } from '../../shared/types';
+
+const SPOT_TICKER_MAP: Record<Preferences['fiatPreference'], string> = {
+  ethusd: 'ETH/USD',
+  etheur: 'ETH/EUR',
+  ethaud: 'ETH/AUD',
+  ethzar: 'ETH/ZAR',
+};
+
+const FIAT_OPTIONS: Array<{ label: string; value: Preferences['fiatPreference'] }> = [
+  { label: 'USD', value: 'ethusd' },
+  // { label: 'EUR', value: 'etheur' },  Only after API migration
+  { label: 'AUD', value: 'ethaud' },
+  { label: 'ZAR', value: 'ethzar' },
+];
+
+const GAS_OPTIONS: Array<{ label: string; value: Preferences['gasPreference'] }> = [
+  { label: 'Fast', value: 'fast' },
+  { label: 'Average', value: 'average' },
+  { label: 'Slow', value: 'slow' },
+];
+
+{
+  /* To add: CowSwap, Across bridging, Aave deposit and withdrawal */
+}
+const TX_OPTIONS: Array<{ label: string; value: Preferences['transactionPreference'] }> = [
+  { label: 'Send ETH', value: 'eth-send' },
+];
+
+type HeaderProps = {
+  preferences: Preferences;
+  spots?: NormalisedSpotPrices;
+  setPreference: (key: string, value: string) => void | Promise<void>;
+};
+
+// Calling useExtensionState here will cause Header to re-render whenever any part of extension state changes, including block updates that have nothing to do with the spot label/value]
+
+export function Header({ preferences, spots, setPreference }: HeaderProps) {
+  const spotLabel = SPOT_TICKER_MAP[preferences.fiatPreference];
+  const spotValue = spots?.[preferences.fiatPreference];
+  // Development state
+  const headerRenderCount = useRef(0);
+  headerRenderCount.current += 1;
+  console.log('Header render', headerRenderCount.current, new Date().toUTCString());
+
+  useEffect(() => {
+    console.log('Header render (props changed) ', new Date().toUTCString(), preferences);
+  }, [preferences]);
+
+  useEffect(() => {
+    console.log(
+      'Header props changed (spots - should only happen every 1 minute',
+      new Date().toUTCString(),
+      spots,
+    );
+  }, [spots]);
+
   return (
     <div className='flex justify-between items-center bg-primary px-4 py-1'>
       <div className='space-x-2'>
-        <Select>
-          <SelectOption>USD</SelectOption>
-          <SelectOption>EUR</SelectOption>
-          <SelectOption>AUD</SelectOption>
-          <SelectOption>ZAR</SelectOption>
+        {/* Fiat currency preference menu  */}
+        <Select
+          value={preferences.fiatPreference}
+          onChange={(e) =>
+            void setPreference('fiatPreference', e.target.value as Preferences['fiatPreference'])
+          }
+        >
+          {FIAT_OPTIONS.map((option) => (
+            <SelectOption key={option.label} value={option.value}>
+              {option.label}
+            </SelectOption>
+          ))}
         </Select>
-        <Select>
-          <SelectOption>Fast</SelectOption>
-          <SelectOption>Average</SelectOption>
-          <SelectOption>Slow</SelectOption>
+
+        {/* Gas speed preference menu  */}
+        <Select
+          value={preferences.gasPreference}
+          onChange={(e) => {
+            void setPreference('gasPreference', e.target.value as Preferences['gasPreference']);
+          }}
+        >
+          {GAS_OPTIONS.map((option) => (
+            <SelectOption key={option.label} value={option.value}>
+              {option.label}
+            </SelectOption>
+          ))}
         </Select>
-        <Select>
-          <SelectOption>Send ETH</SelectOption>
-          {/* To add: CowSwap, Across bridging, Aave deposit and withdrawal */}
+
+        {/* Transaction preference menu  */}
+        <Select
+          value={preferences.transactionPreference}
+          onChange={(e) =>
+            void setPreference(
+              'transactionPrefrence',
+              e.target.value as Preferences['transactionPreference'],
+            )
+          }
+        >
+          {TX_OPTIONS.map((option) => (
+            <SelectOption key={option.value} value={option.value}>
+              {option.label}
+            </SelectOption>
+          ))}
         </Select>
       </div>
+
       {/* Spot Rate  */}
-      <SpotRate />
+      <SpotRate ticker={spotLabel} value={spotValue} />
     </div>
   );
 }
 
 type SelectProps = {
   children: React.ReactNode;
+  value: string;
+  onChange: React.ChangeEventHandler<HTMLSelectElement>;
 };
 
-function Select({ children }: SelectProps) {
+function Select({ children, value, onChange }: SelectProps) {
   return (
-    <select className='cursor-pointer bg-darker-shade text-white text-xs tracking-[1.5px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.1)] rounded-[13px] py-[2px] px-[5px] border-4 border-solid border-primary outline-none ] '>
+    <select
+      value={value}
+      onChange={onChange}
+      className='cursor-pointer bg-darker-shade text-white text-xs tracking-[1.5px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.1)] rounded-[13px] py-[2px] px-[5px] border-4 border-solid border-primary outline-none ] '
+    >
       {children}
     </select>
   );
@@ -38,19 +131,25 @@ function Select({ children }: SelectProps) {
 
 type SelectOptionProps = {
   children: React.ReactNode;
+  value: string;
 };
 
-function SelectOption({ children }: SelectOptionProps) {
-  return <option>{children}</option>;
+function SelectOption({ children, value }: SelectOptionProps) {
+  return <option value={value}>{children}</option>;
 }
 
-function SpotRate() {
+type SpotRatesProp = {
+  ticker: string;
+  value?: number;
+};
+
+function SpotRate({ ticker, value }: SpotRatesProp) {
   return (
     <div className='flex flex-row justify-around mr-[1.25]'>
       <p className='text-[12px] text-white'>
-        ETH/USD:
+        {ticker}:
         <span className='bg-darker-shade text-spot-color  text-[12px] tracking-[1.8px] font-light  rounded-[10px] py-[5px] px-[9px] ml-[10px]  '>
-          2114.00
+          {value}
         </span>
       </p>
     </div>
