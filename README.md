@@ -206,3 +206,13 @@ Whenever you update the application, simply just run the build again (`npm run b
 - render immediately from cached storage
 - subscribe to storage changes
 - no depedency on live network
+
+<br />
+
+---
+
+# Next Tasks
+
+- Profile Changes
+
+- Re-Design the UI (do some sketches)

@@ -1,5 +1,6 @@
 import type { NormalisedBlock, NormalisedSpotPrices, Preferences } from '../../shared/types';
 import { TX_OPTIONS } from '../../shared/config';
+import CountUp from 'react-countup';
 
 /* 
  Body should receive these props from Ap:
@@ -70,20 +71,40 @@ function BlockSection({ block, spots }: BlockSectionProps) {
   return (
     <>
       <div className='flex items-center justify-between border-r-0 py-2.5 px-3.75 pb-1.25'>
-        <Metric label='Block Number' value={block?.number} />
-        <Metric
-          label='ETH/BTC'
-          customClass='w-[40%]'
-          customValueStyle='text-white bg-ethbtc!'
-          value={spots?.ethbtc}
-        />
-        <Metric label='TX Count' value={block?.txCount} />
+        <Metric label='Block Number'>
+          {/* Count Up Will be put here for animation logic [TODO]*/}
+          <CountUp end={block?.number as number} separator=' ' duration={0.3} />
+        </Metric>
+        <Metric label='ETH/BTC' customClass='w-[40%]' customValueStyle='text-white bg-ethbtc!'>
+          <CountUp end={spots?.ethbtc as number} separator='' decimals={4} duration={0.3} />
+        </Metric>
+        <Metric label='TX Count'>
+          <CountUp end={block?.txCount as number} separator='' decimals={0} duration={0.3} />
+        </Metric>
       </div>
       <div className='flex items-center justify-between border-r-0 py-2.5 px-3.75 pb-1.25'>
-        <Metric label='Base Fee' value={block?.basefee} suffix=' Gwei' />
+        <Metric label='Base Fee' value={block?.basefee}>
+          <CountUp
+            end={block?.basefee as number}
+            decimals={block!.basefee < 10 ? 2 : 0}
+            suffix=' Gwei'
+            duration={0.3}
+          />
+        </Metric>
+        <Metric label='Gas Used'>
+          <CountUp end={block!.gasUsed} decimals={0} duration={0.3} separator=',' />
+        </Metric>
+        <Metric label='Capacity'>
+          <CountUp end={capacity!} decimals={0} suffix='%' />
+        </Metric>
+
+        <Metric label='Block Size'>
+          <CountUp end={blockSize!} decimals={0} suffix=' kB' />
+        </Metric>
+        {/* <Metric label='Base Fee' value={block?.basefee} suffix=' Gwei' />
         <Metric label='Gas Used' value={block?.gasUsed} suffix='' />
         <Metric label='Capacity' value={capacity} suffix='%' />
-        <Metric label='Block Size' value={blockSize} suffix=' kB' />
+        <Metric label='Block Size' value={blockSize} suffix=' kB' /> */}
       </div>
     </>
   );
@@ -96,9 +117,11 @@ type MetricProps = {
   customClass?: string;
   customLabelStyle?: string;
   customValueStyle?: string;
+  children: React.ReactNode;
 };
 
-function Metric({ label, value, suffix, customClass, customValueStyle }: MetricProps) {
+//  Might just have to add CountUp and suffix as child and make Metric a wrapped parent
+function Metric({ label, suffix, customClass, customValueStyle, children }: MetricProps) {
   return (
     <div className={`flex flex-col justify-between ${customClass ?? ''}`}>
       <p className='text-metric-label text-shadow-[0_0_1px_#737373] text-center tracking-[0.7px] text-[13px]  my-1.25 mx-2.5'>
@@ -109,8 +132,7 @@ function Metric({ label, value, suffix, customClass, customValueStyle }: MetricP
           customValueStyle ?? ''
         }`}
       >
-        {/* Count Up Will be put here for animation logic [TODO]*/}
-        {value ?? '-'}
+        {children}
         {suffix ?? ''}
       </span>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { NormalisedSpotPrices, Preferences } from '../../shared/types';
 import { TX_OPTIONS } from '../../shared/config';
+import CountUp from 'react-countup';
 
 const SPOT_TICKER_MAP: Record<Preferences['fiatPreference'], string> = {
   ethusd: 'ETH/USD',
@@ -156,7 +157,7 @@ function SpotRate({ ticker, value }: SpotRatesProp) {
       <p className='text-[12px] text-white'>
         {ticker}:
         <span className='bg-darker-shade text-spot-color  text-[12px] tracking-[1.8px] font-light  rounded-[10px] py-1.25 px-2.25 ml-2.5  '>
-          {value}
+          <CountUp decimals={2} end={value!} separator='' duration={0.6} />
         </span>
       </p>
     </div>
