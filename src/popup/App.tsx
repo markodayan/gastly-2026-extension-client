@@ -19,11 +19,11 @@ function App() {
   if (!state) {
     return (
       <main>
-        <div className='w-[560px] h-[350px] bg-card flex flex-col justify-center items-center gap-y-[20px]'>
+        <div className='w-140 h-87.5 bg-card flex flex-col justify-center items-center gap-y-5'>
           <p className='font-quicksand text-[25px] text-white/55'>
             Loading <span className='text-white/20'>(not really if you reading this)</span>
           </p>
-          <p className='font-quicksand text-[15px] text-active mx-[70px] text-center'>
+          <p className='font-quicksand text-[15px] text-active mx-17.5 text-center'>
             Something relatively bad went wrong to get here... Contact{' '}
             <a
               className='cursor-pointer underline text-spot-color'
@@ -41,9 +41,11 @@ function App() {
 
   return (
     <main>
-      <div className='w-[560px]'>
+      <div className='w-140'>
+        {/* Header is capable of mutating state */}
         <Header preferences={state.preferences} spots={state.spots} setPreference={setPreference} />
-        <Body />
+        {/* Body is a read-only component  */}
+        <Body block={state.block!} spots={state.spots!} preferences={state.preferences} />
       </div>
     </main>
   );

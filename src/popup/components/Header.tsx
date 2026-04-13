@@ -1,5 +1,6 @@
-import { memo, useMemo, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { NormalisedSpotPrices, Preferences } from '../../shared/types';
+import { TX_OPTIONS } from '../../shared/config';
 
 const SPOT_TICKER_MAP: Record<Preferences['fiatPreference'], string> = {
   ethusd: 'ETH/USD',
@@ -15,18 +16,24 @@ const FIAT_OPTIONS: Array<{ label: string; value: Preferences['fiatPreference'] 
   { label: 'ZAR', value: 'ethzar' },
 ];
 
-const GAS_OPTIONS: Array<{ label: string; value: Preferences['gasPreference'] }> = [
-  { label: 'Fast', value: 'fast' },
-  { label: 'Average', value: 'average' },
-  { label: 'Slow', value: 'slow' },
-];
+// const GAS_OPTIONS: Array<{ label: string; value: Preferences['gasPreference'] }> = [
+//   { label: 'Fast', value: 'fast' },
+//   { label: 'Average', value: 'average' },
+//   { label: 'Slow', value: 'slow' },
+// ];
 
-{
-  /* To add: CowSwap, Across bridging, Aave deposit and withdrawal */
-}
-const TX_OPTIONS: Array<{ label: string; value: Preferences['transactionPreference'] }> = [
-  { label: 'Send ETH', value: 'eth-send' },
-];
+const txMenuOptions = Object.values(TX_OPTIONS).map((opt) => {
+  return {
+    label: opt.label, // e.g. label: 'Swap (CowSwap)
+    id: opt.id, // e.g. id: 'swap-cowswap'
+  };
+});
+
+// const TX_OPTIONS: Array<{ label: string; value: Preferences['transactionPreference'] }> = [
+//   { label: 'Send ETH', value: 'eth-send' },
+//   { label: 'Swap (CowSwap)', value: 'swap-cowswap' },
+
+// ];
 
 type HeaderProps = {
   preferences: Preferences;
@@ -57,7 +64,7 @@ export function Header({ preferences, spots, setPreference }: HeaderProps) {
   }, [spots]);
 
   return (
-    <div className='flex justify-between items-center bg-primary px-4 py-1'>
+    <div className='flex justify-between items-center bg-primary px-4 py-1 pb-1.25'>
       <div className='space-x-2'>
         {/* Fiat currency preference menu  */}
         <Select
@@ -74,7 +81,7 @@ export function Header({ preferences, spots, setPreference }: HeaderProps) {
         </Select>
 
         {/* Gas speed preference menu  */}
-        <Select
+        {/* <Select
           value={preferences.gasPreference}
           onChange={(e) => {
             void setPreference('gasPreference', e.target.value as Preferences['gasPreference']);
@@ -85,20 +92,20 @@ export function Header({ preferences, spots, setPreference }: HeaderProps) {
               {option.label}
             </SelectOption>
           ))}
-        </Select>
+        </Select> */}
 
         {/* Transaction preference menu  */}
         <Select
           value={preferences.transactionPreference}
           onChange={(e) =>
             void setPreference(
-              'transactionPrefrence',
+              'transactionPreference',
               e.target.value as Preferences['transactionPreference'],
             )
           }
         >
-          {TX_OPTIONS.map((option) => (
-            <SelectOption key={option.value} value={option.value}>
+          {txMenuOptions.map((option) => (
+            <SelectOption key={option.id} value={option.id}>
               {option.label}
             </SelectOption>
           ))}
@@ -122,7 +129,7 @@ function Select({ children, value, onChange }: SelectProps) {
     <select
       value={value}
       onChange={onChange}
-      className='cursor-pointer bg-darker-shade text-white text-xs tracking-[1.5px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.1)] rounded-[13px] py-[2px] px-[5px] border-4 border-solid border-primary outline-none ] '
+      className='cursor-pointer bg-darker-shade text-white text-xs tracking-[1.5px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.1)] rounded-[13px] py-0.5 px-1.25 border-4 border-solid border-primary outline-none ] '
     >
       {children}
     </select>
@@ -148,7 +155,7 @@ function SpotRate({ ticker, value }: SpotRatesProp) {
     <div className='flex flex-row justify-around mr-[1.25]'>
       <p className='text-[12px] text-white'>
         {ticker}:
-        <span className='bg-darker-shade text-spot-color  text-[12px] tracking-[1.8px] font-light  rounded-[10px] py-[5px] px-[9px] ml-[10px]  '>
+        <span className='bg-darker-shade text-spot-color  text-[12px] tracking-[1.8px] font-light  rounded-[10px] py-1.25 px-2.25 ml-2.5  '>
           {value}
         </span>
       </p>

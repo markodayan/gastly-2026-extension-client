@@ -237,6 +237,11 @@ async function setBadgeFromBlock(block: Pick<NormalisedBlock, 'basefee'>): Promi
  * @returns
  */
 function normaliseBlock(raw: BlockMessage): NormalisedBlock {
+  /*
+    Need to handle and analyse precision here
+
+  */
+
   return {
     gasLimit: Number(raw.gasLimit),
     gasUsed: Number(raw.gasUsed),

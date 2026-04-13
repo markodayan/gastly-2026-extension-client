@@ -77,6 +77,7 @@ export function useExtensionState() {
       mounted = false;
       chrome.storage.onChanged.removeListener(listener);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // this lint error is not relevant for a things wrapped in an effect
 
   return { state, updatePreferences, setPreference };

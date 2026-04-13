@@ -13,6 +13,7 @@
   --color-inactive: rgb(255, 255, 255, 0.08);
   --font-quicksand: 'Quicksand', sans-serif;
   --color-footer-card-border: #1a96d7;
+  --color-ethbtc: rgb(20, 114, 158);
 }
 
 @layer utilities {

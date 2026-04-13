@@ -1,3 +1,5 @@
+import { TX_OPTIONS } from './config';
+
 /**
  * Legacy API block type
  */
@@ -61,7 +63,13 @@ export type NormalisedBlock = {
 
 export type GasSpeed = 'fast' | 'average' | 'slow';
 export type FiatPreference = 'ethusd' | 'ethzar' | 'etheur' | 'ethaud';
-export type TransactionPreference = 'eth-send';
+export type TransactionPreference =
+  | 'eth-send'
+  | 'swap-cowswap'
+  | 'aave-umb-dep'
+  | 'aave-umb-wd'
+  | 'aave-umb-interest'
+  | 'across-bridge-only'; // have to change here, then change in Body.tsx for logic (in TX_OPTIONS constant) then enable option in Header.tsx select menu
 
 export type Preferences = {
   gasPreference: GasSpeed;
