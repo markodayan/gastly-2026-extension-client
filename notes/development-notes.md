@@ -418,3 +418,22 @@ Eventually will want:
 
 - expontential backoff
 - jitter
+
+# Explaining some React logic
+
+`useEffectEvent` is most justified when a function:
+
+- reads current states/props
+- needs freshest values
+- should not force effects to re-run
+- may be used inside subscriptions, listeners, or async flows
+
+> That describes `handleStorageChange` ( Listens for storage state changes and uses them to update hook state) and `updatePreferences` (Triggers update of storage state when the hook state is changed via UI toggling of preferences)
+
+It is less necessary when a function:
+
+- only forwards arguments
+- does not directly read state
+- is basically an ergonomic wrapper
+
+> That describes `setPreference`

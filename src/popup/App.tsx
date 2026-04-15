@@ -8,11 +8,11 @@ function App() {
   const renderCount = useRef(0);
 
   renderCount.current += 1;
-  console.log('App render', renderCount.current, new Date().toUTCString());
+  // console.log('App render', renderCount.current, new Date().toUTCString());
 
   // For profiling how many renders are happening and whether they are unnecessary
   useEffect(() => {
-    console.log('[App state changed]', new Date().toUTCString(), state);
+    // console.log('[App state changed]', new Date().toUTCString(), state);
   }, [state]);
 
   // No state found (if loading state, probably could do some animation here)

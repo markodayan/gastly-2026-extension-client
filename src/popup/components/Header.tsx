@@ -39,7 +39,8 @@ const txMenuOptions = Object.values(TX_OPTIONS).map((opt) => {
 type HeaderProps = {
   preferences: Preferences;
   spots?: NormalisedSpotPrices;
-  setPreference: (key: string, value: string) => void | Promise<void>;
+  // setPreference: (key: string, value: string) => void | Promise<void>;
+  setPreference: <K extends keyof Preferences>(key: K, value: Preferences[K]) => void;
 };
 
 // Calling useExtensionState here will cause Header to re-render whenever any part of extension state changes, including block updates that have nothing to do with the spot label/value]
@@ -50,18 +51,18 @@ export function Header({ preferences, spots, setPreference }: HeaderProps) {
   // Development state
   const headerRenderCount = useRef(0);
   headerRenderCount.current += 1;
-  console.log('Header render', headerRenderCount.current, new Date().toUTCString());
+  // console.log('Header render', headerRenderCount.current, new Date().toUTCString());
 
   useEffect(() => {
-    console.log('Header render (props changed) ', new Date().toUTCString(), preferences);
+    // console.log('Header render (props changed) ', new Date().toUTCString(), preferences);
   }, [preferences]);
 
   useEffect(() => {
-    console.log(
-      'Header props changed (spots - should only happen every 1 minute',
-      new Date().toUTCString(),
-      spots,
-    );
+    // console.log(
+    //   'Header props changed (spots - should only happen every 1 minute) [Not currently true - will need to investigate',
+    //   new Date().toUTCString(),
+    //   spots,
+    // );
   }, [spots]);
 
   return (

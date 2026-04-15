@@ -146,6 +146,16 @@ Whenever you update the application, simply just run the build again (`npm run b
 
 > Future change is to improve the hot reload even more (see ChatGPT discussion to learn more about that)
 
+# Deploying to Chrome Web Store
+
+You need to do 3 things:
+
+1. Update the app version in `public/manifest.json` (increment from whatever is currently on the Chrome Store).
+2. Build the application (will be output to `dist`) -> `npm run build:prod`
+3. Generate the package zip file `npm run package`
+
+From here, you just upload this package to the chrome store.
+
 ---
 
 ### First Service Worker Functionality
@@ -213,6 +223,6 @@ Whenever you update the application, simply just run the build again (`npm run b
 
 # Next Tasks
 
-- Profile Changes
-
+- Deploy to app store (comment out debugs)
+- Profiling Analysis Changes
 - Re-Design the UI (do some sketches)

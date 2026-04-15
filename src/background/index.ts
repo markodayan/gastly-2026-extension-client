@@ -22,13 +22,11 @@ const WS_RECONNECT_DELAY_MS = 3_000;
 
 chrome.runtime.onInstalled.addListener((details) => {
   console.log('[onInstalled] bootstrapping...', details.reason);
-  // void bootstrap();
   void runBootstrapOnce();
 });
 
 chrome.runtime.onStartup.addListener(() => {
   console.log('[onStartup] bootstrapping...');
-  // void bootstrap();
   void runBootstrapOnce();
 });
 
@@ -83,7 +81,7 @@ async function fetchAndSyncLatestBlock(): Promise<void> {
 
     const raw: BlockMessage = await res.json();
     const block = normaliseBlock(raw);
-    console.log('HTTP /block (post-normalised)', block);
+    // console.log('HTTP /block (post-normalised)', block);
 
     await setBlock(block);
     await setConnection({
@@ -117,7 +115,7 @@ async function fetchAndSyncSpotRates(): Promise<void> {
 
     const raw: SpotPricesMessage = await res.json();
     const spots = normaliseSpots(raw);
-    console.log('HTTP /spot (post-normalised)', spots);
+    // console.log('HTTP /spot (post-normalised)', spots);
 
     await setSpots(spots);
     await setConnection({
@@ -180,7 +178,7 @@ async function handleWsMessage(event: MessageEvent<string>): Promise<void> {
   if ('type' in parsed) return;
 
   const nextBlock = normaliseBlock(parsed);
-  console.log('ws /block (post-normalised)', nextBlock);
+  // console.log('ws /block (post-normalised)', nextBlock);
   const currentBlock = await getBlock();
 
   // Will leave this sanity check in for now, even if its not req89red (see development notes)
@@ -224,7 +222,7 @@ function clearReconnectTimer(): void {
 }
 
 async function setBadgeFromBlock(block: Pick<NormalisedBlock, 'basefee'>): Promise<void> {
-  console.log('Basefee badge', block.basefee);
+  // console.log('Basefee badge', block.basefee);
   await chrome.action.setBadgeText({
     text: String(block.basefee),
   });
