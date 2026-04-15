@@ -2,6 +2,7 @@ import { Header } from './components/Header';
 import { Body } from './components/Body';
 import { useExtensionState } from './hooks/useExtensionState';
 import { useEffect, useRef } from 'react';
+import manifest from '../../public/manifest.json';
 
 function App() {
   const { state, setPreference } = useExtensionState();
@@ -46,6 +47,12 @@ function App() {
         <Header preferences={state.preferences} spots={state.spots} setPreference={setPreference} />
         {/* Body is a read-only component  */}
         <Body block={state.block!} spots={state.spots!} preferences={state.preferences} />
+
+        <div className='bg-card/94'>
+          <p className='text-white/50 text-center py-2'>
+            App Version: <span className='text-white font-medium'>{manifest.version}</span>
+          </p>
+        </div>
       </div>
     </main>
   );

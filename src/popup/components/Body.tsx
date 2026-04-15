@@ -252,7 +252,9 @@ function PriceCard({
         {/* <p className='font-quicksand font-light text-[11px] tracking-[0.6px] text-white'>{eta}</p>
         <p className='font-sans font-light text-[11px] text-left text-footer-card-border'> | </p> */}
         <p className='font-sans font-light text-[11px] text-left text-reading-color tracking-[1.8px]'>
-          {`${belowThresholdSuffix}${fiatSymbol}${fiatFee}`}
+          {/* {`${belowThresholdSuffix}${fiatSymbol}${fiatFee}`} */}
+          {`${belowThresholdSuffix}${fiatSymbol}`}
+          <CountUp end={fiatFee!} decimals={2} duration={0.3} />
         </p>
       </div>
     </div>
