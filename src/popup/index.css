@@ -14,6 +14,18 @@
   --font-quicksand: 'Quicksand', sans-serif;
   --color-footer-card-border: #1a96d7;
   --color-ethbtc: rgb(20, 114, 158);
+
+  --color-foreground: #f0f2f5;
+  --color-surface: #1a2329;
+  --color-border: #242b32;
+  --color-muted: #252e37;
+  --color-muted-foreground: #7a8491;
+  --color-links-white: #cfdcec;
+  --color-navlinks: #4683ec;
+  --color-gastly-logo-color: #3496ed;
+
+  --color-settings-label: #66e2ff8c;
+  --color-settings-value: #66e2ffd6;
 }
 
 @layer utilities {

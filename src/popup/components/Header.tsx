@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+
 import type { NormalisedSpotPrices, Preferences } from '../../shared/types';
 import { TX_OPTIONS } from '../../shared/config';
 import CountUp from 'react-countup';
@@ -51,23 +52,23 @@ export function Header({ preferences, spots, setPreference }: HeaderProps) {
   // Development state
   const headerRenderCount = useRef(0);
   headerRenderCount.current += 1;
-  // console.log('Header render', headerRenderCount.current, new Date().toUTCString());
+  // // console.log('Header render', headerRenderCount.current, new Date().toUTCString());
 
-  useEffect(() => {
-    // console.log('Header render (props changed) ', new Date().toUTCString(), preferences);
-  }, [preferences]);
+  // useEffect(() => {
+  //   // console.log('Header render (props changed) ', new Date().toUTCString(), preferences);
+  // }, [preferences]);
 
-  useEffect(() => {
-    // console.log(
-    //   'Header props changed (spots - should only happen every 1 minute) [Not currently true - will need to investigate',
-    //   new Date().toUTCString(),
-    //   spots,
-    // );
-  }, [spots]);
+  // useEffect(() => {
+  //   // console.log(
+  //   //   'Header props changed (spots - should only happen every 1 minute) [Not currently true - will need to investigate',
+  //   //   new Date().toUTCString(),
+  //   //   spots,
+  //   // );
+  // }, [spots]);
 
   return (
     <div className='flex justify-between items-center bg-primary px-4 py-1 pb-1.25'>
-      <div className='space-x-2'>
+      <div className='space-x-2 flex items-center'>
         {/* Fiat currency preference menu  */}
         <Select
           value={preferences.fiatPreference}

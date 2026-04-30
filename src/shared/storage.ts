@@ -10,6 +10,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   gasPreference: 'fast',
   fiatPreference: 'ethusd',
   transactionPreference: 'eth-send',
+  appScalePreference: 1,
 };
 
 const DEFAULT_CONNECTION: ConnectionState = {
@@ -101,7 +102,8 @@ export function preferencesNeedRepair(preferences: Partial<Preferences> | undefi
     !preferences ||
     preferences.gasPreference === undefined ||
     preferences.fiatPreference === undefined ||
-    preferences.transactionPreference === undefined
+    preferences.transactionPreference === undefined ||
+    preferences.appScalePreference === undefined
   );
 }
 

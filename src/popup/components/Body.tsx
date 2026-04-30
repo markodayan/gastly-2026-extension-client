@@ -270,5 +270,7 @@ function gasPriceToFiat(gasPrice: number, gasUnits: number, spotRate: number): [
 }
 
 function clean(n: number): number {
-  return n < 10 ? Number(n.toFixed(2)) : n;
+  if (n < 10) return Number(n.toFixed(2));
+  if (n < 100) return Number(n.toFixed(2));
+  return Math.round(n);
 }

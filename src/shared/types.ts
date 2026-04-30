@@ -61,15 +61,18 @@ export type NormalisedBlock = {
   updatedAt?: number;
 };
 
+// When adding new preferences (need to add type here, then update Preferences below, then update default preferences in storage.ts, update preferencesNeedRepair() method in storage.ts to check for new preference, then update extension hook
 export type GasSpeed = 'fast' | 'average' | 'slow';
 export type FiatPreference = 'ethusd' | 'ethzar' | 'etheur' | 'ethaud';
 // To add new transaction options -> update the src/shared/config.ts file
 export type TransactionPreference = keyof typeof TX_OPTIONS;
+export type AppScale = 0.7 | 0.8 | 0.9 | 1;
 
 export type Preferences = {
   gasPreference: GasSpeed;
   fiatPreference: FiatPreference;
   transactionPreference: TransactionPreference;
+  appScalePreference: AppScale;
 };
 
 export type ConnectionState = {
