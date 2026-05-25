@@ -9,7 +9,15 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-dev
 dist-ssr
+
+# Generated icons (produced by generateIconsPlugin at build time)
+public/favicon.ico
+public/icon16.png
+public/icon32.png
+public/icon48.png
+public/icon128.png
 *.local
 
 # Editor directories and files

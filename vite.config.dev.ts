@@ -1,30 +1,21 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { crx } from '@crxjs/vite-plugin';
 import path from 'path';
 import fs from 'node:fs/promises';
 import sharp from 'sharp';
 import pngToIco from 'png-to-ico';
+import manifest from './manifest.dev.json';
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [generateIconsPlugin(), react(), tailwindcss()],
+  plugins: [generateIconsPlugin(), react(), tailwindcss(), crx({ manifest })],
   build: {
-    outDir: 'dist',
-    rollupOptions: {
-      input: {
-        popup: path.resolve(__dirname, 'index.html'),
-        background: path.resolve(__dirname, 'src/background/index.ts'),
-      },
-      output: {
-        entryFileNames: (chunk) => {
-          if (chunk.name === 'background') {
-            return 'background.js';
-          }
-
-          return 'assets/[name].js';
-        },
-      },
+    outDir: 'dist-dev',
+  },
+  server: {
+    cors: {
+      origin: /chrome-extension:\/\/.*/,
     },
   },
   resolve: {
@@ -38,7 +29,7 @@ function generateIconsPlugin() {
   return {
     name: 'generate-icons',
     async buildStart() {
-      const input = path.resolve('public/logo.png');
+      const input = path.resolve('public/dev.png');
       const outputDir = path.resolve('public');
       const sizes = [16, 32, 48, 128];
 
@@ -56,7 +47,7 @@ function generateIconsPlugin() {
       ]);
 
       await fs.writeFile(path.join(outputDir, 'favicon.ico'), ico);
-      console.log('Generated icons');
+      console.log('Generated icons from dev.png');
     },
   };
 }
