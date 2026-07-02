@@ -17,8 +17,9 @@ Tests use Playwright and run against the **production build** (`dist/`), not the
 The CRXJS dev build has HMR machinery that conflicts with Playwright — do not try to run tests against `dist-dev/`.
 
 ```bash
-npm run build:prod && npm test   # standard test workflow
-npm run test:ui                  # interactive Playwright UI
+npm run build:prod && npm run test:e2e   # e2e tests only
+npm test                                 # full suite: unit → build → e2e
+npm run test:e2e:ui                      # interactive Playwright UI
 npx playwright show-report       # view HTML report after a run
 ```
 

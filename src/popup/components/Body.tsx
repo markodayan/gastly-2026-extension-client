@@ -1,5 +1,6 @@
 import type { NormalisedBlock, NormalisedSpotPrices, Preferences } from '../../shared/types';
 import { TX_OPTIONS } from '../../shared/config';
+import { gasPriceToFiat, clean } from '../../shared/utils';
 import CountUp from 'react-countup';
 
 /* 
@@ -261,16 +262,3 @@ function PriceCard({
   );
 }
 
-function gasPriceToFiat(gasPrice: number, gasUnits: number, spotRate: number): [boolean, number] {
-  const costInEth = (gasPrice * gasUnits) / 1_000_000_000;
-  const unfilteredFiatCost = costInEth * spotRate;
-  const filteredFiatCost = Math.round(costInEth * spotRate * 100) / 100;
-  const belowCentThreshold = unfilteredFiatCost < 0.01 ? true : false;
-  return [belowCentThreshold, filteredFiatCost];
-}
-
-function clean(n: number): number {
-  if (n < 10) return Number(n.toFixed(2));
-  if (n < 100) return Number(n.toFixed(2));
-  return Math.round(n);
-}

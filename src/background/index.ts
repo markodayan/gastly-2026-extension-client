@@ -1,11 +1,11 @@
 import { API_HTTP_BASE, API_WS_BASE } from '../shared/env';
 import { ensureDefaults, getBlock, setBlock, setConnection, setSpots } from '../shared/storage';
+import { normaliseBlock, normaliseSpots } from '../shared/utils';
 
 import type {
   BlockMessage,
   NormalisedBlock,
   SpotPricesMessage,
-  NormalisedSpotPrices,
   WsIncomingMessage,
 } from '../shared/types';
 
@@ -228,40 +228,3 @@ async function setBadgeFromBlock(block: Pick<NormalisedBlock, 'basefee'>): Promi
   });
 }
 
-/**
- * Filters non-needed fields of blocks (also would be where you would do client-side additional transformations on a block received from server)
- * This is also probably where the migration adaptor logic will exist to protect against breaking changes
- * @param raw
- * @returns
- */
-function normaliseBlock(raw: BlockMessage): NormalisedBlock {
-  /*
-    Need to handle and analyse precision here
-
-  */
-
-  return {
-    gasLimit: Number(raw.gasLimit),
-    gasUsed: Number(raw.gasUsed),
-    number: Number(raw.number),
-    size: Number(raw.size),
-    gasUtilizationRatio: Number(raw.gasUtilizationRatio),
-    txCount: Number(raw.txCount),
-    basefee: Number(raw.basefee),
-    priorityFees: {
-      fast: Number(raw.priorityFees.fast),
-      average: Number(raw.priorityFees.average),
-      slow: Number(raw.priorityFees.slow),
-    },
-  };
-}
-
-function normaliseSpots(raw: SpotPricesMessage): NormalisedSpotPrices {
-  const normalised: NormalisedSpotPrices = {};
-
-  for (const [ticker, value] of Object.entries(raw)) {
-    normalised[ticker] = Number(value);
-  }
-
-  return normalised;
-}

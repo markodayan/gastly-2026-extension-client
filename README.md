@@ -276,13 +276,13 @@ Tests use [Playwright](https://playwright.dev/) and run against the **production
 **Workflow:**
 ```bash
 npm run build:prod   # build the production extension into dist/
-npm test             # run all Playwright tests
+npm run test:e2e     # run Playwright e2e tests only
 ```
 
 **Other test commands:**
 ```bash
-npm run test:ui      # open Playwright's interactive UI runner
-npm run test:headed  # run tests in a visible browser window
+npm run test:e2e:ui      # open Playwright's interactive UI runner
+npm run test:e2e:headed  # run tests in a visible browser window
 npx playwright test --grep "Fast card"   # run a single test by name
 npx playwright show-report               # open the HTML report after a run
 ```
