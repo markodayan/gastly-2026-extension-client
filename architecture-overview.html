@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gastly — Architecture Overview</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; }
+
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #161b22; border-bottom: 1px solid #30363d;
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  #topbar h1 { font-size: 16px; font-weight: 600; color: #e6edf3; }
+  #topbar p { font-size: 12px; color: #8b949e; }
+  .badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 20px;
+    background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  }
+  #search {
+    margin-left: auto; background: #21262d; border: 1px solid #30363d;
+    color: #c9d1d9; padding: 4px 10px; border-radius: 6px; font-size: 12px; outline: none;
+    width: 180px;
+  }
+  #search:focus { border-color: #58a6ff; }
+
+  #canvas-wrap { position: fixed; top: 52px; left: 0; right: 0; bottom: 0; overflow: auto; }
+  svg { display: block; }
+
+  .node rect { cursor: pointer; transition: opacity 0.15s; }
+  .node text { pointer-events: none; }
+  .node.dimmed rect { opacity: 0.18; }
+  .node.dimmed text { opacity: 0.18; }
+  .node.selected rect { filter: drop-shadow(0 0 6px currentColor); }
+
+  .edge { transition: opacity 0.15s; }
+  .edge.dimmed { opacity: 0.08; }
+  .edge.highlighted path { stroke-width: 2.5; }
+
+  #panel {
+    position: fixed; top: 52px; right: -400px; bottom: 0; width: 380px;
+    background: #161b22; border-left: 1px solid #30363d;
+    padding: 20px; overflow-y: auto; transition: right 0.25s ease;
+    z-index: 200;
+  }
+  #panel.open { right: 0; }
+  #panel h2 { font-size: 15px; font-weight: 600; color: #e6edf3; margin-bottom: 6px; }
+  #panel .layer-tag {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 12px;
+    margin-bottom: 12px; border: 1px solid;
+  }
+  #panel p { font-size: 13px; line-height: 1.6; color: #8b949e; margin-bottom: 14px; }
+  #panel h3 { font-size: 12px; font-weight: 600; color: #c9d1d9; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  #panel code { display: block; font-size: 11px; color: #58a6ff; font-family: 'SF Mono', Consolas, monospace; padding: 2px 0; }
+  #panel ul { list-style: none; margin-bottom: 14px; }
+  #panel ul li { font-size: 12px; color: #8b949e; padding: 2px 0; }
+  #close-btn {
+    position: absolute; top: 12px; right: 12px; background: none; border: none;
+    color: #8b949e; cursor: pointer; font-size: 18px; line-height: 1;
+  }
+  #close-btn:hover { color: #e6edf3; }
+
+  #legend {
+    position: fixed; bottom: 16px; left: 16px; background: #161b22;
+    border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; z-index: 100;
+  }
+  #legend p { font-size: 11px; color: #8b949e; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid; flex-shrink: 0; }
+  .legend-label { font-size: 11px; color: #c9d1d9; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>Gastly</h1>
+  <p>Real-time Ethereum gas tracker Chrome extension</p>
+  <span class="badge">TypeScript</span>
+  <span class="badge">React 19</span>
+  <span class="badge">Tailwind v4</span>
+  <span class="badge">Vite 7</span>
+  <span class="badge">Chrome MV3</span>
+  <input id="search" type="text" placeholder="Search components…" />
+</div>
+
+<div id="canvas-wrap">
+  <svg id="svg" width="1100" height="760" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#30363d" />
+      </marker>
+      <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#58a6ff" />
+      </marker>
+    </defs>
+    <!-- edges rendered by JS -->
+    <g id="edges-layer"></g>
+    <!-- nodes rendered by JS -->
+    <g id="nodes-layer"></g>
+  </svg>
+</div>
+
+<div id="panel">
+  <button id="close-btn">×</button>
+  <h2 id="panel-title"></h2>
+  <span id="panel-tag" class="layer-tag"></span>
+  <p id="panel-desc"></p>
+  <h3>Key Files</h3>
+  <ul id="panel-files"></ul>
+  <h3>Interfaces / Exports</h3>
+  <ul id="panel-interfaces"></ul>
+</div>
+
+<div id="legend">
+  <p>Layers</p>
+  <div class="legend-item"><div class="legend-swatch" style="background:#1a3a2a;border-color:#3fb950"></div><span class="legend-label">Entry Point</span></div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#1a2a3a;border-color:#58a6ff"></div><span class="legend-label">Core Logic</span></div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#2a1a3a;border-color:#bc8cff"></div><span class="legend-label">Data / Model</span></div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#3a2a1a;border-color:#d29922"></div><span class="legend-label">Infrastructure</span></div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#2a1a1a;border-color:#f85149"></div><span class="legend-label">External System</span></div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#1a3a3a;border-color:#39d2c0"></div><span class="legend-label">API Layer</span></div>
+</div>
+
+<script>
+const LAYERS = {
+  entry:    { fill: '#1a3a2a', stroke: '#3fb950', label: 'Entry Point' },
+  core:     { fill: '#1a2a3a', stroke: '#58a6ff', label: 'Core Logic' },
+  data:     { fill: '#2a1a3a', stroke: '#bc8cff', label: 'Data / Model' },
+  infra:    { fill: '#3a2a1a', stroke: '#d29922', label: 'Infrastructure' },
+  external: { fill: '#2a1a1a', stroke: '#f85149', label: 'External System' },
+  api:      { fill: '#1a3a3a', stroke: '#39d2c0', label: 'API Layer' },
+};
+
+const nodes = [
+  {
+    id: 'backend-api',
+    label: 'Gastly Backend API',
+    sub: 'extension-api.gastly.tools',
+    x: 420, y: 30, w: 220, h: 56,
+    layer: 'external',
+    desc: 'External REST + WebSocket server. Exposes GET /block (latest Ethereum block data) and GET /spot (ETH fiat spot prices). In production at extension-api.gastly.tools; in dev at localhost:5001.',
+    files: ['.env.production', '.env.development'],
+    interfaces: ['GET /block → BlockMessage JSON', 'GET /spot → SpotPricesMessage JSON', 'WS /block → streamed BlockMessage events'],
+  },
+  {
+    id: 'background',
+    label: 'Background Service Worker',
+    sub: 'src/background/index.ts',
+    x: 340, y: 160, w: 380, h: 56,
+    layer: 'entry',
+    desc: 'MV3 service worker — the sole owner of network I/O. Opens a WebSocket for live block data, polls /spot every minute via chrome.alarms, normalises API responses, writes to chrome.storage.local, and updates the toolbar badge text with the current base fee in Gwei. Reconnects the WS after 3s on close, and uses each successful spot fetch as a recovery signal.',
+    files: ['src/background/index.ts'],
+    interfaces: ['chrome.runtime.onInstalled', 'chrome.runtime.onStartup', 'chrome.alarms.onAlarm', 'connectBlockWs()', 'fetchAndSyncLatestBlock()', 'fetchAndSyncSpotRates()', 'setBadgeFromBlock()'],
+  },
+  {
+    id: 'storage',
+    label: 'chrome.storage.local',
+    sub: 'src/shared/storage.ts',
+    x: 340, y: 300, w: 380, h: 56,
+    layer: 'data',
+    desc: 'The IPC bus between background and popup. Holds four keys: block (NormalisedBlock), spots (NormalisedSpotPrices), preferences (Preferences), connection (ConnectionState). storage.ts wraps all reads/writes and implements a preference repair/migration system for partial or missing preference records.',
+    files: ['src/shared/storage.ts'],
+    interfaces: ['getBlock()', 'setBlock()', 'getSpots()', 'setSpots()', 'getPreferences()', 'setPreferences()', 'getConnection()', 'setConnection()', 'getStorageSnapshot()', 'ensureDefaults()', 'managePreferences()', 'preferencesNeedRepair()'],
+  },
+  {
+    id: 'types',
+    label: 'Shared Types & Config',
+    sub: 'src/shared/types.ts · config.ts · env.ts',
+    x: 760, y: 300, w: 260, h: 56,
+    layer: 'data',
+    desc: 'Three shared modules imported by both contexts. types.ts defines all data shapes (NormalisedBlock, Preferences, ExtensionState, etc.). config.ts exports TX_OPTIONS — six transaction types with gas unit estimates. env.ts re-exports Vite env vars as typed API URL constants.',
+    files: ['src/shared/types.ts', 'src/shared/config.ts', 'src/shared/env.ts'],
+    interfaces: ['TX_OPTIONS', 'NormalisedBlock', 'NormalisedSpotPrices', 'Preferences', 'ExtensionState', 'ConnectionState', 'API_HTTP_BASE', 'API_WS_BASE'],
+  },
+  {
+    id: 'utils',
+    label: 'Shared Utilities',
+    sub: 'src/shared/utils.ts',
+    x: 760, y: 380, w: 260, h: 56,
+    layer: 'core',
+    desc: 'Pure functions with no Chrome API dependency — importable by both browser contexts and Jest unit tests. gasPriceToFiat: converts Gwei gas price to 2dp fiat amount. clean: rounds gas price for display. normaliseBlock: casts raw API block to numbers, strips unused fields. normaliseSpots: converts string prices to numbers.',
+    files: ['src/shared/utils.ts'],
+    interfaces: ['gasPriceToFiat(gasPrice, gasUnits, spotRate)', 'clean(n)', 'normaliseBlock(raw)', 'normaliseSpots(raw)'],
+  },
+  {
+    id: 'use-extension-state',
+    label: 'useExtensionState',
+    sub: 'src/popup/hooks/useExtensionState.ts',
+    x: 340, y: 440, w: 380, h: 56,
+    layer: 'core',
+    desc: 'Central React hook that owns all popup state. On mount: calls managePreferences() then getStorageSnapshot(). Subscribes to chrome.storage.onChanged for live updates — when preferences change, it runs the repair path before merging. Exposes setPreference() for optimistic UI mutations that write through to storage.',
+    files: ['src/popup/hooks/useExtensionState.ts'],
+    interfaces: ['state: ExtensionState | null', 'setPreference<K>(key, value)', 'updatePreferences(patch)'],
+  },
+  {
+    id: 'app',
+    label: 'App',
+    sub: 'src/popup/App.tsx',
+    x: 340, y: 570, w: 165, h: 56,
+    layer: 'core',
+    desc: 'Root React component. Reads appScalePreference to apply CSS transform scaling (70–100%) to the fixed 560×412px canvas. Renders Header, Body, and a footer with the settings/scale picker. Shows an error state if useExtensionState returns null.',
+    files: ['src/popup/App.tsx', 'src/popup/main.tsx'],
+    interfaces: ['renders Header, Body, footer settings'],
+  },
+  {
+    id: 'header',
+    label: 'Header',
+    sub: 'src/popup/components/Header.tsx',
+    x: 200, y: 680, w: 200, h: 56,
+    layer: 'core',
+    desc: 'Stateless component receiving preferences, spots, and setPreference as props. Renders fiat currency select (USD/AUD/ZAR), transaction type select (6 options from TX_OPTIONS), and an animated ETH spot price. Calls setPreference on select change for optimistic updates.',
+    files: ['src/popup/components/Header.tsx'],
+    interfaces: ['HeaderProps: { preferences, spots, setPreference }', 'SpotRate', 'Select / SelectOption'],
+  },
+  {
+    id: 'body',
+    label: 'Body',
+    sub: 'src/popup/components/Body.tsx',
+    x: 555, y: 680, w: 200, h: 56,
+    layer: 'core',
+    desc: 'Read-only component. BlockSection shows block number, ETH/BTC rate, tx count, base fee, gas used, capacity, and block size — all animated with react-countup. CardsSection computes and displays Fast/Average/Slow gas cards: each derives total gas price (basefee + priority), then calls gasPriceToFiat() for the fiat cost estimate in the user\'s preferred currency.',
+    files: ['src/popup/components/Body.tsx'],
+    interfaces: ['BodyProps: { block, spots, preferences }', 'BlockSection', 'CardsSection', 'PriceCard', 'gasPriceToFiat(gasPrice, gasUnits, spotRate)', 'clean(n)'],
+  },
+  {
+    id: 'build',
+    label: 'Vite Build Pipeline',
+    sub: 'vite.config.ts · vite.config.dev.ts',
+    x: 30, y: 160, w: 240, h: 56,
+    layer: 'infra',
+    desc: 'Two separate configs. vite.config.ts: production build to dist/, two Rollup entrypoints (popup HTML + background TS), icon generation via sharp/png-to-ico. vite.config.dev.ts: uses @crxjs/vite-plugin for hot-reload, outputs to dist-dev/, loads manifest.dev.json. Both expose VITE_API_HTTP_BASE and VITE_API_WS_BASE from .env files.',
+    files: ['vite.config.ts', 'vite.config.dev.ts', 'manifest.dev.json', 'public/manifest.json', '.env.development', '.env.production'],
+    interfaces: ['npm run dev (CRXJS HMR)', 'npm run build:prod → dist/', 'npm run package → chrome-package/'],
+  },
+  {
+    id: 'chrome-badge',
+    label: 'Chrome Toolbar Badge',
+    sub: 'chrome.action.setBadgeText',
+    x: 760, y: 160, w: 240, h: 56,
+    layer: 'external',
+    desc: 'The browser toolbar icon badge. Updated by background on every new block with the current base fee in Gwei (integer or 2dp for sub-10 values). Gives the user gas at a glance without opening the popup.',
+    files: [],
+    interfaces: ['chrome.action.setBadgeText({ text })'],
+  },
+];
+
+const edges = [
+  { from: 'backend-api',   to: 'background',           label: 'WS + HTTP' },
+  { from: 'background',    to: 'storage',               label: 'setBlock / setSpots / setConnection' },
+  { from: 'background',    to: 'chrome-badge',          label: 'setBadgeText' },
+  { from: 'background',    to: 'types',                 label: 'imports types' },
+  { from: 'background',    to: 'utils',                 label: 'normaliseBlock / normaliseSpots' },
+  { from: 'body',          to: 'utils',                 label: 'gasPriceToFiat / clean' },
+  { from: 'storage',       to: 'use-extension-state',   label: 'onChanged + snapshot' },
+  { from: 'storage',       to: 'types',                 label: 'imports types' },
+  { from: 'use-extension-state', to: 'app',             label: 'state, setPreference' },
+  { from: 'app',           to: 'header',                label: 'props' },
+  { from: 'app',           to: 'body',                  label: 'props' },
+  { from: 'header',        to: 'types',                 label: 'TX_OPTIONS, types' },
+  { from: 'body',          to: 'types',                 label: 'TX_OPTIONS, types' },
+  { from: 'build',         to: 'background',            label: 'compiles' },
+  { from: 'build',         to: 'app',                   label: 'bundles popup' },
+];
+
+const svg = document.getElementById('svg');
+const edgesLayer = document.getElementById('edges-layer');
+const nodesLayer = document.getElementById('nodes-layer');
+
+function cx(node) { return node.x + node.w / 2; }
+function cy(node) { return node.y + node.h / 2; }
+
+function nodeById(id) { return nodes.find(n => n.id === id); }
+
+function edgePoints(from, to) {
+  const fx = cx(from), fy = cy(from);
+  const tx = cx(to),   ty = cy(to);
+  const dx = tx - fx, dy = ty - fy;
+  // simple bezier control points
+  const cpx1 = fx + dx * 0.4;
+  const cpy1 = fy;
+  const cpx2 = tx - dx * 0.4;
+  const cpy2 = ty;
+  return `M${fx},${fy} C${cpx1},${cpy1} ${cpx2},${cpy2} ${tx},${ty}`;
+}
+
+// Build edges
+const edgeEls = edges.map(e => {
+  const fromNode = nodeById(e.from);
+  const toNode = nodeById(e.to);
+  if (!fromNode || !toNode) return null;
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.classList.add('edge');
+  g.dataset.from = e.from;
+  g.dataset.to = e.to;
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', edgePoints(fromNode, toNode));
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#30363d');
+  path.setAttribute('stroke-width', '1.5');
+  path.setAttribute('marker-end', 'url(#arrow)');
+
+  g.appendChild(path);
+  edgesLayer.appendChild(g);
+  return { el: g, path, data: e };
+}).filter(Boolean);
+
+// Build nodes
+const nodeEls = {};
+nodes.forEach(node => {
+  const layer = LAYERS[node.layer];
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.classList.add('node');
+  g.dataset.id = node.id;
+  g.style.cursor = 'pointer';
+
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', node.x);
+  rect.setAttribute('y', node.y);
+  rect.setAttribute('width', node.w);
+  rect.setAttribute('height', node.h);
+  rect.setAttribute('rx', '8');
+  rect.setAttribute('fill', layer.fill);
+  rect.setAttribute('stroke', layer.stroke);
+  rect.setAttribute('stroke-width', '1.5');
+
+  const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  label.setAttribute('x', node.x + node.w / 2);
+  label.setAttribute('y', node.y + 22);
+  label.setAttribute('text-anchor', 'middle');
+  label.setAttribute('font-size', '13');
+  label.setAttribute('font-weight', '600');
+  label.setAttribute('fill', '#e6edf3');
+  label.textContent = node.label;
+
+  const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  sub.setAttribute('x', node.x + node.w / 2);
+  sub.setAttribute('y', node.y + 38);
+  sub.setAttribute('text-anchor', 'middle');
+  sub.setAttribute('font-size', '10');
+  sub.setAttribute('fill', '#8b949e');
+  sub.textContent = node.sub;
+
+  g.appendChild(rect);
+  g.appendChild(label);
+  g.appendChild(sub);
+  nodesLayer.appendChild(g);
+  nodeEls[node.id] = { el: g, rect, data: node };
+});
+
+let selected = null;
+
+function clearSelection() {
+  selected = null;
+  Object.values(nodeEls).forEach(({ el }) => { el.classList.remove('selected', 'dimmed'); });
+  edgeEls.forEach(({ el, path }) => {
+    el.classList.remove('dimmed', 'highlighted');
+    path.setAttribute('stroke', '#30363d');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('marker-end', 'url(#arrow)');
+  });
+  document.getElementById('panel').classList.remove('open');
+}
+
+function selectNode(id) {
+  if (selected === id) { clearSelection(); return; }
+  selected = id;
+
+  const connectedIds = new Set([id]);
+  edgeEls.forEach(({ data }) => {
+    if (data.from === id || data.to === id) {
+      connectedIds.add(data.from);
+      connectedIds.add(data.to);
+    }
+  });
+
+  Object.entries(nodeEls).forEach(([nid, { el }]) => {
+    el.classList.remove('selected', 'dimmed');
+    if (nid === id) el.classList.add('selected');
+    else if (!connectedIds.has(nid)) el.classList.add('dimmed');
+  });
+
+  edgeEls.forEach(({ el, path, data }) => {
+    el.classList.remove('dimmed', 'highlighted');
+    if (data.from === id || data.to === id) {
+      el.classList.add('highlighted');
+      path.setAttribute('stroke', '#58a6ff');
+      path.setAttribute('stroke-width', '2.5');
+      path.setAttribute('marker-end', 'url(#arrow-blue)');
+    } else {
+      el.classList.add('dimmed');
+      path.setAttribute('stroke', '#30363d');
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('marker-end', 'url(#arrow)');
+    }
+  });
+
+  // Fill panel
+  const node = nodeById(id);
+  const layer = LAYERS[node.layer];
+  document.getElementById('panel-title').textContent = node.label;
+  const tag = document.getElementById('panel-tag');
+  tag.textContent = layer.label;
+  tag.style.color = layer.stroke;
+  tag.style.borderColor = layer.stroke;
+  tag.style.background = layer.fill;
+  document.getElementById('panel-desc').textContent = node.desc;
+
+  const filesList = document.getElementById('panel-files');
+  filesList.innerHTML = '';
+  node.files.forEach(f => {
+    const li = document.createElement('li');
+    const code = document.createElement('code');
+    code.textContent = f;
+    li.appendChild(code);
+    filesList.appendChild(li);
+  });
+
+  const ifacesList = document.getElementById('panel-interfaces');
+  ifacesList.innerHTML = '';
+  node.interfaces.forEach(i => {
+    const li = document.createElement('li');
+    li.textContent = i;
+    ifacesList.appendChild(li);
+  });
+
+  document.getElementById('panel').classList.add('open');
+}
+
+// Node click
+Object.entries(nodeEls).forEach(([id, { el }]) => {
+  el.addEventListener('click', (e) => { e.stopPropagation(); selectNode(id); });
+});
+
+// Background click
+document.getElementById('canvas-wrap').addEventListener('click', clearSelection);
+document.getElementById('close-btn').addEventListener('click', clearSelection);
+
+// Search
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  if (!q) { clearSelection(); return; }
+
+  const matchIds = new Set(
+    nodes.filter(n =>
+      n.id.includes(q) || n.label.toLowerCase().includes(q) ||
+      n.sub.toLowerCase().includes(q) || n.desc.toLowerCase().includes(q)
+    ).map(n => n.id)
+  );
+
+  Object.entries(nodeEls).forEach(([id, { el }]) => {
+    el.classList.remove('selected', 'dimmed');
+    if (!matchIds.has(id)) el.classList.add('dimmed');
+  });
+
+  edgeEls.forEach(({ el, path, data }) => {
+    el.classList.remove('dimmed', 'highlighted');
+    if (!matchIds.has(data.from) && !matchIds.has(data.to)) el.classList.add('dimmed');
+  });
+
+  document.getElementById('panel').classList.remove('open');
+  selected = null;
+});
+</script>
+</body>
+</html>
