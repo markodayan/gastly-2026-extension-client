@@ -269,6 +269,26 @@ This produces `chrome-package/<version>.zip`, ready for upload to the Chrome Web
 npm run lint
 ```
 
+### Testing
+
+Tests use [Playwright](https://playwright.dev/) and run against the **production build** in `dist/`. The CRXJS dev build has HMR machinery that conflicts with Playwright's navigation tracking, so tests are reserved for the production artifact — which is also what gets shipped.
+
+**Workflow:**
+```bash
+npm run build:prod   # build the production extension into dist/
+npm test             # run all Playwright tests
+```
+
+**Other test commands:**
+```bash
+npm run test:ui      # open Playwright's interactive UI runner
+npm run test:headed  # run tests in a visible browser window
+npx playwright test --grep "Fast card"   # run a single test by name
+npx playwright show-report               # open the HTML report after a run
+```
+
+Tests are in `tests/e2e/`. The fixture in `tests/e2e/fixtures.ts` launches Brave (falling back to Playwright's bundled Chromium), loads the extension from `dist/`, and blocks all live API calls so the service worker can't overwrite seeded test data.
+
 ---
 
 ## Environment
