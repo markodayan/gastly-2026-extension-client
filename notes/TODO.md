@@ -1,0 +1,4 @@
+- Compute transaction gas costs on backend and have client fetch periodically from there (maybe once a day or every hour - low bandwidth required)
+  - This will make the client more pure in serving data leaving configuration of transaction costs to the client.
+- Fetch available transaction types from the server periodically (maybe once a day or every hour)
+  - This will allow for the client to not have to be updated with hardcoded menu values whenever the data from the backend is augmented.

@@ -10,28 +10,6 @@ The React app should:
 
 > React popup = view layer over storage
 
-# Development Workflow
-
-### React Devtools Usage
-
-First check if you have `react-devtools` installed globally, if not, run:
-
-```bash
-npm i -g react-devtools
-```
-
-Add this to your html file (or at the beggining of your entry point file)
-
-```html
-<script src="http://localhost:8097"></script>
-```
-
-Update the <b>Content Security Policy (CSP)</b>: If you are using Manivest V3, you must allow the connection in your `manifest.json`:
-
-```json
-"content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'; connect-src ws://localhost:8097" }
-```
-
 # Repair Strategies
 
 Preference management involves a <b>clean bidirectional resilience model</b> without making React and storage fight each other.

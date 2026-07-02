@@ -35,3 +35,9 @@ junk
 
 chrome-package
 
+# Playwright failure artifacts (screenshots, traces, error context)
+test-results/
+
+# Claude Code internals
+skills-lock.json
+

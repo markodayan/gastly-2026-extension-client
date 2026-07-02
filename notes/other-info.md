@@ -1,4 +1,75 @@
-# Important setup for development testing and deployment
+# Functionality
+
+### First Service Worker Functionality
+
+- Initialise default preferences
+- Fetch initial block snapshot via HTTP
+- Open WebSocket for block updates
+- Poll spot rates via `chrome.alarms`
+
+### Service worker responsibilities
+
+- initialise defaults on install/startup
+- open or re-open WebSocket when needed
+- fetch spot prices on alarm
+- update badge
+- cache normalised data
+- maybe expose lightweight message handlers for popup actions
+
+### Popup application responsibilities
+
+- read cached state once on mount
+- react to `chrome.storage.onChanged`
+- render instantly from cached values
+- maybe allow changing preferences
+
+# Runtime Model
+
+<b>On Install</b>:
+
+- set default preferences
+- fetch initial block snapshot over HTTP
+- fetch initial spot prices
+- update badge
+- schedule the spot-price alarm
+
+<b>On startup.worker wake</b>:
+
+- read preferences + cached state
+- restore badge from cached block
+- ensure alarm exists
+- ensure WebSocket is connected
+
+<b>On WebSocket message</b>:
+
+- normalise block payload
+- compute gas totals
+- write updated `block` cache
+- update badge
+
+<b>On alarm</b>:
+
+- fetch `/spot`
+- cache spots
+- if WebSocket is dead, attempt reconnect
+
+<b>On popup open</b>
+
+- render immediately from cached storage
+- subscribe to storage changes
+- no depedency on live network
+
+<br />
+
+---
+
+# Next Tasks
+
+- Deploy to app store (comment out debugs)
+- Profiling Analysis Changes
+- Re-Design the UI (do some sketches)
+
+# Important setup for development testing and deployment (Outdated)
 
 I need to configure Vite to:
 
@@ -101,115 +172,3 @@ Now add two different build scripts to `package.json`:
     "build:dev": "tsc -b && vite build --mode development",
     "build:prod": "tsc -b && vite build --mode production",
 ```
-
-# Running in Development Mode
-
-In order to run both the Popup and the service worker, we need to run the build command:
-
-```
-npm run build
-```
-
-The `dist/` should have this structure:
-
-```
-dist/
-  manifest.json
-  index.html
-  background.js   ✅ compiled from TS
-  assets/
-    ...
-```
-
-Now we can load the application into Chrome:
-
-- go to `chrome://extensions`
-- enable <b>Developer Mode</b>
-- click <b>Load unpacked</b>
-- select <b>dist/</b>
-
-After this, you will be able to click the "Inspects views <b>service worker</b>" link that will open the chrome devtools for the application. And you are all set to go.
-Whenever you update the application, simply just run the build again (`npm run build:dev` or `npm run build:prod`) and click the refresh button on the extension card for the application (on the `chrome://extensions` page).
-
-> Future change is to improve the hot reload even more (see ChatGPT discussion to learn more about that)
-
-# Deploying to Chrome Web Store
-
-You need to do 3 things:
-
-1. Update the app version in `public/manifest.json` (increment from whatever is currently on the Chrome Store).
-2. Build the application (will be output to `dist`) -> `npm run build:prod`
-3. Generate the package zip file `npm run package`
-
-From here, you just upload this package to the chrome store.
-
----
-
-### First Service Worker Functionality
-
-- Initialise default preferences
-- Fetch initial block snapshot via HTTP
-- Open WebSocket for block updates
-- Poll spot rates via `chrome.alarms`
-
-### Service worker responsibilities
-
-- initialise defaults on install/startup
-- open or re-open WebSocket when needed
-- fetch spot prices on alarm
-- update badge
-- cache normalised data
-- maybe expose lightweight message handlers for popup actions
-
-### Popup application responsibilities
-
-- read cached state once on mount
-- react to `chrome.storage.onChanged`
-- render instantly from cached values
-- maybe allow changing preferences
-
-# Runtime Model
-
-<b>On Install</b>:
-
-- set default preferences
-- fetch initial block snapshot over HTTP
-- fetch initial spot prices
-- update badge
-- schedule the spot-price alarm
-
-<b>On startup.worker wake</b>:
-
-- read preferences + cached state
-- restore badge from cached block
-- ensure alarm exists
-- ensure WebSocket is connected
-
-<b>On WebSocket message</b>:
-
-- normalise block payload
-- compute gas totals
-- write updated `block` cache
-- update badge
-
-<b>On alarm</b>:
-
-- fetch `/spot`
-- cache spots
-- if WebSocket is dead, attempt reconnect
-
-<b>On popup open</b>
-
-- render immediately from cached storage
-- subscribe to storage changes
-- no depedency on live network
-
-<br />
-
----
-
-# Next Tasks
-
-- Deploy to app store (comment out debugs)
-- Profiling Analysis Changes
-- Re-Design the UI (do some sketches)

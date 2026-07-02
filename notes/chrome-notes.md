@@ -1,4 +1,4 @@
-# Chrome Observations and Research
+# Chrome Observations and Research (Chrome API)
 
 `runtime.onInstalled` is not only for first install. It also fires when:
 
